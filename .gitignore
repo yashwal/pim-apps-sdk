@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -127,3 +128,28 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+=======
+# Cached builds
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dll
+*.egg
+*.egg-info/
+
+# Build directories
+docs/_build/
+build/
+dist/
+
+# Python-boilerplate auto generated files
+src/pim_apps/__meta__.py
+
+# IDEs
+.idea/
+
+# Testing and temporary files
+.tox/
+>>>>>>> 69a4298 (First commit of pim_apps_sdk)
