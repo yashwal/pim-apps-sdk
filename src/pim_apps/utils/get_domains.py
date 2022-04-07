@@ -22,5 +22,5 @@ class GetDomains:
         return os.environ['A2C_BASE_URL']
 
 
-    def get_pepperx_domain():
+    def get_pepperx_domain(self):
         return os.environ['PEPPERX_URL']

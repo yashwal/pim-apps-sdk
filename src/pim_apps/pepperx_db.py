@@ -1,7 +1,7 @@
 import json
 import requests
 from traceback import print_exc
-from src.pim_apps.utils.get_domains import GetDomains
+from .utils.get_domains import GetDomains
 
 class App(object):
     def __init__(self, app_id="", app_name=""):
