@@ -219,10 +219,11 @@ class ProductProcessor(object):
         self.task_id = task_id
         self.reference_id = reference_id
         app_user_instance = AppUserPIM(self.api_key)
+        self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
 
 
 
-    def insert_product_update_status(self, pid="", status="SUCCESS", status_desc=""):
+    def insert_product_status(self, pid="", status="SUCCESS", status_desc=""):
         product_status_instance = ProductStatus(self.task_id)
 
         # if "SUCCESS" not in status:
@@ -243,12 +244,12 @@ class ProductProcessor(object):
 
 
     # 1. Pulls products and variants from PIM
-    def fetch_process_products(self, process_product):
+    def iterate_products(self, process_product):
         self.processed_list = []
         try:
             counter = 1
-            pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
-            total_products = pim_channel_api.get()['data'].get('total', 0)
+            # pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
+            total_products = self.pim_channel_api.get()['data'].get('total', 0)
             print(f"Received {total_products} products for the job processing")
         except Exception as e:
             print(e)
@@ -256,24 +257,33 @@ class ProductProcessor(object):
             return
 
         self.product_counter = 0
-        for product in PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True):
+        for product in self.pim_channel_api:
             self.product_counter += 1
             try:
                 if product is not None:
                     pid = product.get("id") or random.randint(100,9999)
-                    self.insert_product_update_status(pid,"STARTED" , f"Product processing started for {pid}")
+                    self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
                     proccessed_product, status = process_product(product, self.product_counter)
                     print("Processed product output")
                     print(str(json.dumps(proccessed_product)))
                     self.processed_list.append(proccessed_product)
-                    self.insert_product_update_status(pid,status , "Product processing completed")
+                    self.insert_product_status(pid,status , "Product processing completed")
 
 
             except Exception as e:
                 print_exc()
                 raise e
 
-        file_url = pim_channel_api.upload_csv(self.processed_list, "sample_app_response_")
-        pim_channel_api.import_to_pim(file_url)
-        print(file_url)
+    def get_processed_products(self):
+        return self.processed_list
+
+    def send_to_pim(self, auto_export = True, file_url="", products_list=[]):
+        if auto_export != True and file_url :
+            print("use file url and send to pim")
+        elif auto_export != True and products_list and isinstance(products_list, list) and len(products_list) >0:
+            print("convert list of dict to JSON or CSV and")
+        elif auto_export == True:
+            file_url = self.pim_channel_api.upload_csv(self.processed_list, "sample_app_response_")
+            self.pim_channel_api.import_to_pim(file_url)
+            print(file_url)
 

@@ -11,7 +11,7 @@ class PIMChannelsSDK(object):
         self.api_key = api_key
         self.task_id = task_id
         self.reference_id = reference_id
-        self.product_processor = ProductProcessor(self.api_key, self.reference_id, self.task_id)
+        self.job_processor = ProductProcessor(self.api_key, self.reference_id, self.task_id)
 
 
 
