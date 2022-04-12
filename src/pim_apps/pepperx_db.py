@@ -1,7 +1,7 @@
 import json
 import requests
 from traceback import print_exc
-from src.pim_apps.utils.get_domains import GetDomains
+from .utils import get_pepperx_domain, get_pim_domain, get_pim_app_domain, get_a2c_domain
 
 class App(object):
     def __init__(self, app_id="", app_name=""):
@@ -11,7 +11,7 @@ class App(object):
 
     def create(self, app_id, name, credentials={}):
         try:
-            url = f"{GetDomains.get_pepperx_domain()}api/v1/app_data/"
+            url = f"{get_pepperx_domain()}api/v1/app_data/"
             payload = json.dumps({
                 "app_id": app_id,
                 "app_name": name,
@@ -42,7 +42,7 @@ class App(object):
 
     def get(self, app_id, app_name=""):
         try:
-            url = f"{GetDomains.get_pepperx_domain()}api/v1/app_data/?app_id={app_id}"
+            url = f"{get_pepperx_domain()}api/v1/app_data/?app_id={app_id}"
             payload = json.dumps({})
             headers = {
                 'Content-Type': 'application/json'
@@ -79,7 +79,7 @@ class AppUser(object):
 
     def create(self, credentials={}, pim_creds={}):
         try:
-            url = f"{GetDomains.get_pepperx_domain()}api/v1/app_user_data/"
+            url = f"{get_pepperx_domain()}api/v1/app_user_data/"
             payload = json.dumps({
                 "app_id": self.app_id,
                 "identifier": self.identifier,
@@ -111,7 +111,7 @@ class AppUser(object):
 
     def get(self):
         try:
-            url = f"{GetDomains.get_pepperx_domain()}api/v1/app_user_data/?app_id={self.app_id}&identifier={self.identifier}"
+            url = f"{get_pepperx_domain()}api/v1/app_user_data/?app_id={self.app_id}&identifier={self.identifier}"
 
             payload = json.dumps({})
             headers = {
@@ -143,7 +143,7 @@ class AppUserPIM(object):
 
     def get(self):
         try:
-            url = f"{GetDomains.get_pepperx_domain()}api/v1/app_user_pim_data/?api_key={self.api_key}"
+            url = f"{get_pepperx_domain()}api/v1/app_user_pim_data/?api_key={self.api_key}"
 
             payload = json.dumps({})
             headers = {
@@ -210,7 +210,7 @@ class ProductStatus(object):
 
     def post(self, data):
         try:
-            url = f"{GetDomains.get_pepperx_domain()}api/v1/task/product/transaction"
+            url = f"{get_pepperx_domain()}api/v1/task/product/transaction"
 
             data["task_result_id"] = self.task_id
             payload = json.dumps(data)
@@ -231,7 +231,7 @@ class ProductStatus(object):
     def post_transaction(self, data):
 
         try:
-            url = f"{GetDomains.get_pepperx_domain()}api/v1/transaction"
+            url = f"{get_pepperx_domain()}api/v1/transaction"
 
             data["task_result_id"] = self.task_id
             payload = json.dumps(data)
