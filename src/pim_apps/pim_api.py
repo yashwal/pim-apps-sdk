@@ -217,6 +217,7 @@ class ProductProcessor(object):
     def __init__(self, api_key, reference_id, task_id):
         self.api_key = api_key
         self.task_id = task_id
+        self.reference_id = reference_id
         app_user_instance = AppUserPIM(self.api_key)
 
 
@@ -242,11 +243,9 @@ class ProductProcessor(object):
 
 
     # 1. Pulls products and variants from PIM
-    def fetch_process_products(self, reference_id, process_product):
+    def fetch_process_products(self, process_product):
         self.processed_list = []
-        self.reference_id = reference_id
         try:
-
             counter = 1
             pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
             total_products = pim_channel_api.get()['data'].get('total', 0)
