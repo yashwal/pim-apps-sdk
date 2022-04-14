@@ -49,8 +49,7 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src'),
     install_requires=[
-        "requests", "boto3==1.21.38", "botocore==1.24.38", "certifi==2021.10.8", "charset-normalizer==2.0.12",
-        "idna==3.3", "jmespath==1.0.0", "numpy", "pandas",
+        "requests", "boto3==1.21.38", "botocore==1.24.38","numpy", "pandas",
     ],
     extras_require={
         'dev': [
