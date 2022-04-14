@@ -140,7 +140,7 @@ class PIMChannelAPI(object):
 
     def import_to_pim(self, file_url):
 
-        url = f"{os.environ['PIM_APP_BASE_URL']}v1/imports"
+        url = f"{get_pim_domain()}v1/imports"
 
         payload = json.dumps({
             "url": file_url #import_csv_url #import_json_url
