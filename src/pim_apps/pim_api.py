@@ -281,7 +281,7 @@ class ProductProcessor(object):
     def get_processed_products(self):
         return self.processed_list
 
-    def send_to_pim(self, auto_export = True, file_url="", products_list=[]):
+    def send_to_pim(self, auto_export = False, file_url="", products_list=[]):
         if file_url :
             print("use file url and send to pim")
             self.pim_channel_api.import_to_pim(file_url)
@@ -295,4 +295,10 @@ class ProductProcessor(object):
             file_url = self.pim_channel_api.upload_csv(self.processed_list, "sample_app_response_")
             self.pim_channel_api.import_to_pim(file_url)
             print(file_url)
+
+    def upload_to_s3(self, file_path):
+        print("Uploading file to s3")
+
+        uploaded_url = self.upload_to_s3(file_path)
+        return uploaded_url
 
