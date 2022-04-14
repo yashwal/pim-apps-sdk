@@ -49,7 +49,7 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src'),
     install_requires=[
-        "requests", "boto3==1.21.38", "botocore==1.24.38","numpy", "pandas",
+        "requests", "boto3==1.21.38", "botocore==1.24.38","numpy", "pandas","folium==0.2.1"
     ],
     extras_require={
         'dev': [
