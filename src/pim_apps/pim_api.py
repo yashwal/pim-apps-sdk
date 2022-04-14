@@ -299,6 +299,6 @@ class ProductProcessor(object):
     def upload_to_s3(self, file_path):
         print("Uploading file to s3")
 
-        uploaded_url = self.upload_to_s3(file_path)
+        uploaded_url = self.pim_channel_api.upload_to_s3(file_path)
         return uploaded_url
 
