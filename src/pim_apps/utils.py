@@ -5,19 +5,29 @@ os.environ['PIM_BASE_URL']="https://pim.unbxd.io/"
 os.environ['A2C_BASE_URL']="https://api.api2cart.com/"
 os.environ['PEPPERX_URL']="https://pim.unbxd.io/pepperx/"
 
+os.environ['QA_PIM_APP_BASE_URL']="http://pimqa-apps.unbxd.io/pim/"
+os.environ['QA_PIM_BASE_URL']="http://pimqa.unbxd.io/"
+os.environ['QA_A2C_BASE_URL']="https://api.api2cart.com/"
+os.environ['QA_PEPPERX_URL']="https://pimqa.unbxd.io/pepperx/"
+
 
 
 def get_pim_app_domain():
-    return os.environ['PIM_APP_BASE_URL']
+
+    env = os.environ['PEPPERX_ENV']
+    return os.environ['PIM_APP_BASE_URL'] if env == "PROD" else os.environ['QA_PIM_APP_BASE_URL']
 
 
 def get_pim_domain():
-    return os.environ['PIM_BASE_URL']
+    env = os.environ['PEPPERX_ENV']
+    return os.environ['PIM_BASE_URL'] if env == "PROD" else os.environ['QA_PIM_BASE_URL']
 
 
 def get_a2c_domain():
-    return os.environ['A2C_BASE_URL']
+    env = os.environ['PEPPERX_ENV']
+    return os.environ['A2C_BASE_URL'] if env == "PROD" else os.environ['QA_A2C_BASE_URL']
 
 
 def get_pepperx_domain():
-    return os.environ['PEPPERX_URL']
+    env = os.environ['PEPPERX_ENV']
+    return os.environ['PEPPERX_URL'] if env == "PROD" else os.environ['QA_PEPPERX_URL']
