@@ -218,11 +218,10 @@ class PIMChannelAPI(object):
 
 class ProductProcessor(object):
 
-    def __init__(self, api_key, reference_id, task_id, env="PROD"):
+    def __init__(self, api_key, reference_id, task_id):
         self.api_key = api_key
         self.task_id = task_id
         self.reference_id = reference_id
-        os.environ['PEPPERX_ENV']=env
         app_user_instance = AppUserPIM(self.api_key)
         self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
 
