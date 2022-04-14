@@ -150,6 +150,7 @@ class PIMChannelAPI(object):
             'Authorization': self.api_key,
             'Content-Type': 'application/json'
         }
+        print(f"Requesting URL ---  {url} " )
         print(f"{json.dumps(payload)} --- {json.dumps(headers)}")
 
         response = requests.request("POST", url, headers=headers, data=payload)
