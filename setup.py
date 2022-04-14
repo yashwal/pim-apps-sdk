@@ -50,8 +50,7 @@ setup(
     packages=find_packages('src'),
     install_requires=[
         "requests", "boto3==1.21.38", "botocore==1.24.38", "certifi==2021.10.8", "charset-normalizer==2.0.12",
-        "idna==3.3", "jmespath==1.0.0", "numpy", "pandas==1.4.2", "python-dateutil==2.8.2", "pytz==2022.1",
-        "requests==2.27.1", "s3transfer==0.5.2", "six==1.16.0", "urllib3==1.26.9",
+        "idna==3.3", "jmespath==1.0.0", "numpy", "pandas",
     ],
     extras_require={
         'dev': [
