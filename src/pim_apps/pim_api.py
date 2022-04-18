@@ -271,7 +271,7 @@ class ProductProcessor(object):
                     print("Processed product output")
                     print(str(json.dumps(proccessed_product)))
                     self.processed_list.append(proccessed_product)
-                    self.insert_product_status(pid,status , "Product processing completed")
+#                     self.insert_product_status(pid,status , "Product processing completed")
 
 
             except Exception as e:
