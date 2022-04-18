@@ -143,8 +143,8 @@ class PIMChannelAPI(object):
         url = f"{get_pim_app_domain()}v1/imports"
 
         payload = json.dumps({
-            "url": file_url #import_csv_url #import_json_url
-            # "referenceId": self.reference_id
+            "url": file_url, #import_csv_url #import_json_url
+            "referenceId": self.reference_id
         })
         headers = {
             'Authorization': self.api_key,
