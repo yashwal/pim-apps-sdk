@@ -269,8 +269,6 @@ class ProductProcessor(object):
                     pid = product.get("id") or random.randint(100,9999)
                     self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
                     proccessed_product, status = process_product(product, self.product_counter)
-#                     print("Processed product output")
-#                     print(str(json.dumps(proccessed_product)))
                     self.processed_list.append(proccessed_product)
 #                     self.insert_product_status(pid,status , "Product processing completed")
 
