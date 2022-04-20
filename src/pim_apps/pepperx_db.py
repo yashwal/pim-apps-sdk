@@ -219,7 +219,7 @@ class ProductStatus(object):
                 'accept': 'application/json',
                 'Content-Type': 'application/json'
             }
-            # print("DATA that was sent to PIM*********",data)
+            print("Product status update for each product --- >",data)
             response = requests.request("POST", url, headers=headers, data=payload)
             # print("UPDATED THE MESSAGE SUCCESSFULLY******",response.text)
             if response.status_code not in [200, 201]:
