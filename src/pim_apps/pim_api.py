@@ -119,7 +119,7 @@ class PIMChannelAPI(object):
                   format(str(json.dumps(response))))
             self.is_retryable(count, page, scroll_id, retry_count, msg)
         elif response.status_code != 200:
-            print(msg)
+            # print(msg)
             print("!!!!!! pim Products pull faied after " + str(time_taken_to_pull_product) + "  : {}".
                   format(str(json.dumps(req))))
             print("!!!!!! pim Products pull faied with error   : {}".
