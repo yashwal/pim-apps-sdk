@@ -267,7 +267,7 @@ class ProductProcessor(object):
             try:
                 if product is not None:
                     pid = product.get("id") or random.randint(100,9999)
-                    self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
+#                     self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
                     proccessed_product, status = process_product(product, self.product_counter)
                     self.processed_list.append(proccessed_product)
 #                     self.insert_product_status(pid,status , "Product processing completed")
