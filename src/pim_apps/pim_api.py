@@ -322,7 +322,7 @@ class ProductProcessor(object):
         if fixed_header:
             header_row_counter = 0
             for row in fixed_header:
-                tsv_products.insert(header_row_counter, fixed_header[row])
+                tsv_products.insert(header_row_counter, row)
                 header_row_counter += 1
         print(tsv_products)
         data = []
