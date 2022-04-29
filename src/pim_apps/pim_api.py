@@ -157,9 +157,35 @@ class PIMChannelAPI(object):
 
         print(response.text)
 
+    def get_export_details(self):
+
+        url = f"{get_pim_app_domain()}v1/appTriggerInfo?referenceId={self.reference_id}"
+
+        payload = {}
+        headers = {
+            'Authorization': f'{self.api_key}'
+        }
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        return json.loads(response.text)
 
 
-    #@title Enter CSV file name to be generated for the API response and run the cells
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#@title Enter CSV file name to be generated for the API response and run the cells
     def generate_csv(self, data, file_name="API_data_fetch", zipped=False):
         named_tuple = time.localtime() # get struct_time
         time_string = time.strftime("-%m-%d-2021-%H-%M", named_tuple)
@@ -331,3 +357,4 @@ class ProductProcessor(object):
         template_outout = write_csv_file(data=tsv_products, delimiter="\t", filename=filename)
         # template_op_url = self.upload_to_s3(template_outout)
         return template_outout
+
