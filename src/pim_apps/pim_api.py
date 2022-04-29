@@ -8,7 +8,7 @@ import pandas as pd
 import math
 import requests
 import random
-from .utils import get_pepperx_domain, get_pim_domain, get_pim_app_domain, get_a2c_domain
+from .utils import get_pepperx_domain, get_pim_domain, get_pim_app_domain, get_a2c_domain, write_csv_file
 from .pepperx_db import ProductStatus, App, AppUser, AppUserPIM
 from urllib.request import urlretrieve
 import boto3
@@ -267,7 +267,7 @@ class ProductProcessor(object):
             try:
                 if product is not None:
                     pid = product.get("id") or random.randint(100,9999)
-                    self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
+                    # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
                     proccessed_product, status = process_product(product, self.product_counter)
                     self.processed_list.append(proccessed_product)
 #                     self.insert_product_status(pid,status , "Product processing completed")
@@ -301,3 +301,32 @@ class ProductProcessor(object):
         uploaded_url = self.pim_channel_api.upload_to_s3(file_path)
         return uploaded_url
 
+    def write_products_template(self,fixed_header, properties_schema=[], header=False ):
+        counter = 1
+        # transformer = Transformer(product_schema)
+        tsv_products = list()
+        for product in self.pim_channel_api:
+            # product = transformer.transform(product)
+            tsv_product = list()
+            for schema_key in properties_schema:
+                data = product.get(schema_key, '')
+
+                tsv_product.append(data)
+            print(tsv_product)
+            tsv_products.append(tsv_product)
+            counter = counter + 1
+            # TODO Manage the product level cleanup and final expected custom channel format
+
+        if header:
+            tsv_products.insert(0, properties_schema)
+        if fixed_header:
+            header_row_counter = 0
+            for row in fixed_header:
+                tsv_products.insert(header_row_counter, fixed_header[row])
+                header_row_counter += 1
+        print(tsv_products)
+        data = []
+
+        template_outout = write_csv_file(tsv_products)
+        # template_op_url = self.upload_to_s3(template_outout)
+        return template_outout
