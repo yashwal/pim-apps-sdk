@@ -41,8 +41,8 @@ def get_pepperx_domain():
     print(f" {env} ---- {url} ")
     return url
 
-def write_csv_file(data, delimiter="\t"):
-    filename = tempfile.NamedTemporaryFile(delete=False).name
+def write_csv_file(data, delimiter="\t", filename="IndexedExport.csv"):
+
     with open(filename, 'w') as csvfile:
         csvwriter = csv.writer(csvfile, delimiter=delimiter)
         csvwriter.writerows(data)

@@ -301,7 +301,8 @@ class ProductProcessor(object):
         uploaded_url = self.pim_channel_api.upload_to_s3(file_path)
         return uploaded_url
 
-    def write_products_template(self,fixed_header, properties_schema=[], header=False ):
+
+    def write_products_template(self,fixed_header, properties_schema=[], header=False, filename="IndexedExport.csv" ):
         counter = 1
         # transformer = Transformer(product_schema)
         tsv_products = list()
@@ -327,6 +328,6 @@ class ProductProcessor(object):
         print(tsv_products)
         data = []
 
-        template_outout = write_csv_file(tsv_products)
+        template_outout = write_csv_file(data=tsv_products, delimiter="\t", filename=filename)
         # template_op_url = self.upload_to_s3(template_outout)
         return template_outout
