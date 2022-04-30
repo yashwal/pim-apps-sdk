@@ -340,28 +340,30 @@ class ProductProcessor(object):
         counter = 1
         # transformer = Transformer(product_schema)
         tsv_products = list()
-        for product in self.pim_channel_api:
-            # product = transformer.transform(product)
-            tsv_product = list()
-            for schema_key in properties_schema:
-                data = product.get(schema_key, '')
+        try:
+            for product in self.pim_channel_api:
+                # product = transformer.transform(product)
+                tsv_product = list()
+                for schema_key in properties_schema:
+                    data = product.get(schema_key, '')
 
-                tsv_product.append(data)
-            print(tsv_product)
-            tsv_products.append(tsv_product)
-            counter = counter + 1
-            # TODO Manage the product level cleanup and final expected custom channel format
+                    tsv_product.append(data)
+                print(tsv_product)
+                tsv_products.append(tsv_product)
+                counter = counter + 1
+                # TODO Manage the product level cleanup and final expected custom channel format
 
-        if header:
-            tsv_products.insert(0, properties_schema)
-        if fixed_header:
-            header_row_counter = 0
-            for row in fixed_header:
-                tsv_products.insert(header_row_counter, row)
-                header_row_counter += 1
-        print(tsv_products)
-        data = []
-
-        template_outout = write_csv_file(data=tsv_products, delimiter="\t", filename=filename)
-        # template_op_url = self.upload_to_s3(template_outout)
+            if header:
+                tsv_products.insert(0, properties_schema)
+            if fixed_header:
+                header_row_counter = 0
+                for row in fixed_header:
+                    tsv_products.insert(header_row_counter, row)
+                    header_row_counter += 1
+            print(tsv_products)
+            template_outout = write_csv_file(data=tsv_products, delimiter="\t", filename=filename)
+            # template_op_url = self.upload_to_s3(template_outout)
+        except Exception as e:
+            print_exc()
+            print(e)
         return template_outout
