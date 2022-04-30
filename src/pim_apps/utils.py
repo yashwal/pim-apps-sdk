@@ -104,10 +104,10 @@ class FileParser(object):
     def parse_excel(self):
         xls = pd.ExcelFile(self.url)
         # Now you can list all sheets in the file
-        sheets = xls.sheet_names;
-        print("Sheets present in excel file are : ", sheets)
-        self.df = pd.read_excel(xls, sheets[0])
-        return self.infer_schema()
+        # sheets = xls.sheet_names;
+        # print("Sheets present in excel file are : ", sheets)
+        # self.df = pd.read_excel(xls, sheets[0])
+        return xls
 
     def parse_xlsm(self):
         print("Pasring Amazon File in xlsm format")
