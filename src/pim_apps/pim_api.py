@@ -180,8 +180,11 @@ class PIMChannelAPI(object):
             'Authorization': f'{self.api_key}'
         }
         print(f" >>>>>>>>>>>> Export status update for {self.reference_id} ---> {payload}")
+        print(f" >>>>>>>>>>>> Export status update URL {url}")
+        print(f" >>>>>>>>>>>> Export status update headers {headers}")
         response = requests.request("POST", url, headers=headers, data=payload)
         print(response)
+        print(f" >>>>>>>>>>>> Export status update response {response.text}")
         return json.loads(response.text)
 
     # @title Enter CSV file name to be generated for the API response and run the cells
