@@ -181,7 +181,6 @@ class PIMChannelAPI(object):
         }
         response = requests.request("POST", url, headers=headers, data=payload)
 
-        print(response.text)
         print(f" >>>>>>>>>>>> Export status updated for  {self.reference_id} ---  {response.text}")
         return json.loads(response.text)
 
