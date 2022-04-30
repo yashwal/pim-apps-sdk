@@ -184,22 +184,6 @@ class PIMChannelAPI(object):
 
         return json.loads(response.text)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #@title Enter CSV file name to be generated for the API response and run the cells
     def generate_csv(self, data, file_name="API_data_fetch", zipped=False):
         named_tuple = time.localtime() # get struct_time
