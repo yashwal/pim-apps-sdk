@@ -349,7 +349,7 @@ class ProductProcessor(object):
                     data = product.get(schema_key, '')
 
                     tsv_product.append(data)
-                print(tsv_product)
+                # print(tsv_product)
                 tsv_products.append(tsv_product)
                 counter = counter + 1
                 # TODO Manage the product level cleanup and final expected custom channel format
