@@ -179,16 +179,10 @@ class PIMChannelAPI(object):
             'Authorization': f'{self.api_key}',
             'Content-Type': 'application/json'
         }
-        print(f" >>>>>>>>>>>> Export status update for {self.reference_id} ---> {payload}")
-        print(f" >>>>>>>>>>>> Export status update URL {url}")
-        print(f" >>>>>>>>>>>> Export status update headers {headers}")
         response = requests.request("POST", url, headers=headers, data=payload)
 
         print(response.text)
-
-
-        print(response)
-        print(f" >>>>>>>>>>>> Export status update response {response.text}")
+        print(f" >>>>>>>>>>>> Export status updated for  {self.reference_id} ---  {response.text}")
         return json.loads(response.text)
 
     # @title Enter CSV file name to be generated for the API response and run the cells
@@ -367,7 +361,7 @@ class ProductProcessor(object):
                 for row in fixed_header:
                     tsv_products.insert(header_row_counter, row)
                     header_row_counter += 1
-            print(tsv_products)
+            # print(tsv_products)
             template_outout = write_csv_file(data=tsv_products, delimiter="\t", filename=filename)
             # template_op_url = self.upload_to_s3(template_outout)
         except Exception as e:
