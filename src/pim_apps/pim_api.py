@@ -172,17 +172,21 @@ class PIMChannelAPI(object):
 
     def update_export_status(self, data):
 
-        # http://pimqa-apps.unbxd.io/pim/api/v3/channelExports/{referenceId}
         url = f"{get_pim_app_domain()}api/v3/channelExports/{self.reference_id}"
 
         payload = json.dumps(data)
         headers = {
-            'Authorization': f'{self.api_key}'
+            'Authorization': f'{self.api_key}',
+            'Content-Type': 'application/json'
         }
         print(f" >>>>>>>>>>>> Export status update for {self.reference_id} ---> {payload}")
         print(f" >>>>>>>>>>>> Export status update URL {url}")
         print(f" >>>>>>>>>>>> Export status update headers {headers}")
         response = requests.request("POST", url, headers=headers, data=payload)
+
+        print(response.text)
+
+
         print(response)
         print(f" >>>>>>>>>>>> Export status update response {response.text}")
         return json.loads(response.text)
@@ -326,7 +330,7 @@ class ProductProcessor(object):
 
     def update_export_status(self, status="STARTED", success_file="", failed_file=""):
         data = {
-            "status": status
+            "status": str(status).upper().strip()
         }
         if success_file:
             data["file_download_links"] = {
