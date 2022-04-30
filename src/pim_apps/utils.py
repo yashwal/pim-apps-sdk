@@ -4,20 +4,25 @@ import tempfile
 import zipfile
 
 import pandas as pd
-os.environ['A2C_BASE_URL']="https://api.api2cart.com/"
 
-os.environ['PIM_APP_BASE_URL']="https://pim-apps.unbxd.io/pim/"
-os.environ['PIM_BASE_URL']="https://pim.unbxd.io/"
-os.environ['PEPPERX_URL']="https://pim.unbxd.io/pepperx/"
+os.environ['A2C_BASE_URL'] = "https://api.api2cart.com/"
 
-os.environ['QA_PIM_APP_BASE_URL']="http://pimqa-apps.unbxd.io/pim/"
-os.environ['QA_PIM_BASE_URL']="http://pimqa.unbxd.io/"
-os.environ['QA_PEPPERX_URL']="https://pimqa.unbxd.io/pepperx/"
+os.environ['PIM_APP_BASE_URL'] = "https://pim-apps.unbxd.io/pim/"
+os.environ['PIM_BASE_URL'] = "https://pim.unbxd.io/"
+os.environ['PEPPERX_URL'] = "https://pim.unbxd.io/pepperx/"
 
+os.environ['QA_PIM_APP_BASE_URL'] = "http://pimqa-apps.unbxd.io/pim/"
+os.environ['QA_PIM_BASE_URL'] = "http://pimqa.unbxd.io/"
+os.environ['QA_PEPPERX_URL'] = "https://pimqa.unbxd.io/pepperx/"
+
+EXPORT_STATUS = {"STARTED": "STARTED", "CHECK_IN_PROGRESS": "CHECK_IN_PROGRESS",
+                 "EXPORT_IN_PROGRESS": "EXPORT_IN_PROGRESS", "PRODUCTS_PROCESSED": "PRODUCTS_PROCESSED",
+                 "PRODUCTS_FAILED": "PRODUCTS_FAILED", "EXPORTED": "EXPORTED", "FAILED": "FAILED",
+                 "TIMED_OUT": "TIMED_OUT", "WRITING_TO_FILE": "WRITING_TO_FILE", "UPLOADED_FILE": "UPLOADED_FILE",
+                 "FAILED_TO_UPLOAD_FILE": "FAILED_TO_UPLOAD_FILE"}
 
 
 def get_pim_app_domain():
-
     env = os.environ['PEPPERX_ENV']
     url = os.environ['PIM_APP_BASE_URL'] if env == "PROD" else os.environ['QA_PIM_APP_BASE_URL']
     print(f" {env} ---- {url} ")
@@ -37,24 +42,25 @@ def get_a2c_domain():
 
 def get_pepperx_domain():
     env = os.environ['PEPPERX_ENV']
-    url =  os.environ['PEPPERX_URL'] if env == "PROD" else os.environ['QA_PEPPERX_URL']
+    url = os.environ['PEPPERX_URL'] if env == "PROD" else os.environ['QA_PEPPERX_URL']
     print(f" {env} ---- {url} ")
     return url
 
-def write_csv_file(data, delimiter="\t", filename="IndexedExport.csv"):
 
+def write_csv_file(data, delimiter="\t", filename="IndexedExport.csv"):
     with open(filename, 'w') as csvfile:
         csvwriter = csv.writer(csvfile, delimiter=delimiter)
         csvwriter.writerows(data)
     return filename
 
+
 class FileParser(object):
-    def load(self ,url):
+    def load(self, url):
         self.url = url
         self.file_type = url.split(".")[-1]
         print("The URL file type is : ", self.file_type)
-        method_name ='parse_' +self.file_type
-        method =getattr(self ,method_name ,lambda :'Invalid')
+        method_name = 'parse_' + self.file_type
+        method = getattr(self, method_name, lambda: 'Invalid')
         return method()
 
     def infer_schema(self):
@@ -119,3 +125,10 @@ class FileParser(object):
         # properties_list = pd.read_excel(xls, sheet_name="Data Definitions", header=1)
         # properties_template = pd.read_excel(xls, sheet_name="Template", header=0)
         return xls
+
+class Dict2Class(object):
+
+    def __init__(self, my_dict):
+
+        for key in my_dict:
+            setattr(self, key, my_dict[key])

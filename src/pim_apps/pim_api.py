@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 import time
-from time import time as time_time,sleep
+from time import time as time_time, sleep
 import pandas as pd
 import math
 import requests
@@ -15,10 +15,11 @@ import boto3
 import random
 from botocore.exceptions import ClientError
 
+
 class PIMChannelAPI(object):
     def __init__(
             self, api_key, reference_id=None, properties=[], group_by_parent=None, parent_id=None, q=None,
-            cache_count=20, slice_id = None, max_slice = None
+            cache_count=20, slice_id=None, max_slice=None
     ):
         self.api_key = api_key
         self.properties = properties
@@ -125,7 +126,7 @@ class PIMChannelAPI(object):
             print("!!!!!! pim Products pull faied with error   : {}".
                   format(str(json.dumps(response))))
             raise ValueError(
-                "Pim Product Pull failed due non " + str(response.status_code)  + " status " + response.text
+                "Pim Product Pull failed due non " + str(response.status_code) + " status " + response.text
                 + "==> Request Object >> " + str(req))
         print("@@@@ Finished fetching total of pim Products pull it took " + str(time_taken_to_pull_product) + "  : {}".
               format(str(json.dumps(req))))
@@ -137,20 +138,19 @@ class PIMChannelAPI(object):
                 "Non 200 status thrown by PIM get product " + response.text + "==> Request Object >> " + str(req))
         return response.json()
 
-
     def import_to_pim(self, file_url):
 
         url = f"{get_pim_app_domain()}v1/imports"
 
         payload = json.dumps({
-            "url": file_url, #import_csv_url #import_json_url
+            "url": file_url,  # import_csv_url #import_json_url
             "referenceId": self.reference_id
         })
         headers = {
             'Authorization': self.api_key,
             'Content-Type': 'application/json'
         }
-        print(f"Requesting URL ---  {url} " )
+        print(f"Requesting URL ---  {url} ")
         print(f"{json.dumps(payload)} --- {json.dumps(headers)}")
 
         response = requests.request("POST", url, headers=headers, data=payload)
@@ -184,9 +184,9 @@ class PIMChannelAPI(object):
 
         return json.loads(response.text)
 
-#@title Enter CSV file name to be generated for the API response and run the cells
+    # @title Enter CSV file name to be generated for the API response and run the cells
     def generate_csv(self, data, file_name="API_data_fetch", zipped=False):
-        named_tuple = time.localtime() # get struct_time
+        named_tuple = time.localtime()  # get struct_time
         time_string = time.strftime("-%m-%d-2021-%H-%M", named_tuple)
         df = pd.DataFrame(data)
         file_name = f'{file_name}{time_string}.csv'
@@ -203,43 +203,41 @@ class PIMChannelAPI(object):
         return final_local_url
 
     def upload_to_s3(self, filename):
-      """Upload a file to an S3 bucket
-      :param file_name: File to upload
-      :param bucket: Bucket to upload to
-      :param object_name: S3 object name. If not specified then file_name is used
-      :return: True if file was uploaded, else False
-      """
-      bucket = "unbxd-pim-ui"
-      region = os.environ['aws_region']
-      aws_access_key_id=os.environ['aws_access_key_id']
-      aws_secret_access_key=os.environ['aws_secret_access_key']
-      key = "app-uploads/" + filename
-      object_name = filename
-      s3 = boto3.resource(
-          service_name='s3',
-          region_name=region,
-          aws_access_key_id=aws_access_key_id,
-          aws_secret_access_key=aws_secret_access_key
-      )
-      try:
-          s3.Bucket(bucket).upload_file(Filename=filename, Key=key)
-          url = f"https://{bucket}.s3.{region}.amazonaws.com/{key}"
-      except ClientError as e:
-          # logging.error(e)
-          print_exc()
-          print(e)
-          return False
+        """Upload a file to an S3 bucket
+        :param file_name: File to upload
+        :param bucket: Bucket to upload to
+        :param object_name: S3 object name. If not specified then file_name is used
+        :return: True if file was uploaded, else False
+        """
+        bucket = "unbxd-pim-ui"
+        region = os.environ['aws_region']
+        aws_access_key_id = os.environ['aws_access_key_id']
+        aws_secret_access_key = os.environ['aws_secret_access_key']
+        key = "app-uploads/" + filename
+        object_name = filename
+        s3 = boto3.resource(
+            service_name='s3',
+            region_name=region,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key
+        )
+        try:
+            s3.Bucket(bucket).upload_file(Filename=filename, Key=key)
+            url = f"https://{bucket}.s3.{region}.amazonaws.com/{key}"
+        except ClientError as e:
+            # logging.error(e)
+            print_exc()
+            print(e)
+            return False
 
-      print(url)
-      return url
+        print(url)
+        return url
 
     def upload_csv(self, req_data, input_file_name):
         file_name = self.generate_csv(req_data, input_file_name, True)
         # csv_url = file_name
         csv_url = self.upload_to_s3(file_name)
         return csv_url
-
-
 
 
 class ProductProcessor(object):
@@ -250,8 +248,6 @@ class ProductProcessor(object):
         self.reference_id = reference_id
         app_user_instance = AppUserPIM(self.api_key)
         self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
-
-
 
     def insert_product_status(self, pid="", status="SUCCESS", status_desc=""):
         product_status_instance = ProductStatus(self.task_id)
@@ -272,7 +268,6 @@ class ProductProcessor(object):
             print_exc()
             print(e)
 
-
     # 1. Pulls products and variants from PIM
     def iterate_products(self, process_product):
         self.processed_list = []
@@ -291,12 +286,11 @@ class ProductProcessor(object):
             self.product_counter += 1
             try:
                 if product is not None:
-                    pid = product.get("id") or random.randint(100,9999)
+                    pid = product.get("id") or random.randint(100, 9999)
                     # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
                     proccessed_product, status = process_product(product, self.product_counter)
                     self.processed_list.append(proccessed_product)
-#                     self.insert_product_status(pid,status , "Product processing completed")
-
+            #                     self.insert_product_status(pid,status , "Product processing completed")
 
             except Exception as e:
                 print_exc()
@@ -305,12 +299,12 @@ class ProductProcessor(object):
     def get_processed_products(self):
         return self.processed_list
 
-    def send_to_pim(self, auto_export = False, file_url="", products_list=[], file_name="App_Results_"):
-        if file_url :
+    def send_to_pim(self, auto_export=False, file_url="", products_list=[], file_name="App_Results_"):
+        if file_url:
             print("use file url and send to pim")
             self.pim_channel_api.import_to_pim(file_url)
             print(file_url)
-        elif products_list and isinstance(products_list, list) and len(products_list) >0:
+        elif products_list and isinstance(products_list, list) and len(products_list) > 0:
             print("convert list of dict to JSON or CSV and")
             file_url = self.pim_channel_api.upload_csv(products_list, file_name)
             self.pim_channel_api.import_to_pim(file_url)
@@ -327,7 +321,22 @@ class ProductProcessor(object):
         return uploaded_url
 
 
-    def write_products_template(self,fixed_header, properties_schema=[], header=False, filename="IndexedExport.csv" ):
+    def update_export_status(self, status="STARTED", success_file="", failed_file=""):
+        data = {
+            "status": status
+        }
+        if success_file:
+            data["file_download_links"] = {
+                "CSV": success_file
+            }
+        if failed_file:
+            data["failed_file_download_links"] = {
+                "CSV": failed_file
+            }
+        self.pim_channel_api.update_export_status(data)
+
+
+    def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="IndexedExport.csv"):
         counter = 1
         # transformer = Transformer(product_schema)
         tsv_products = list()
@@ -356,4 +365,3 @@ class ProductProcessor(object):
         template_outout = write_csv_file(data=tsv_products, delimiter="\t", filename=filename)
         # template_op_url = self.upload_to_s3(template_outout)
         return template_outout
-
