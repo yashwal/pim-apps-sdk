@@ -170,6 +170,21 @@ class PIMChannelAPI(object):
 
         return json.loads(response.text)
 
+    def update_export_status(self, data):
+
+        # http://pimqa-apps.unbxd.io/pim/api/v3/channelExports/{referenceId}
+        url = f"{get_pim_app_domain()}api/v3/channelExports/{self.reference_id}"
+
+        payload = json.dumps(data)
+        headers = {
+            'Authorization': f'{self.api_key}'
+        }
+
+        response = requests.request("POST", url, headers=headers, data=payload)
+
+        return json.loads(response.text)
+
+
 
 
 
