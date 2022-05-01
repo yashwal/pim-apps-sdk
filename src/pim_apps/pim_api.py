@@ -336,10 +336,11 @@ class ProductProcessor(object):
         self.pim_channel_api.update_export_status(data)
 
 
-    def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="IndexedExport.csv"):
+    def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="Template_Export.csv"):
         counter = 1
         # transformer = Transformer(product_schema)
         tsv_products = list()
+        template_outout = []
         try:
             for product in self.pim_channel_api:
                 # product = transformer.transform(product)
@@ -350,6 +351,8 @@ class ProductProcessor(object):
                     tsv_product.append(data)
                 # print(tsv_product)
                 tsv_products.append(tsv_product)
+                pid = product.get("id") or product.get("sku") or random.randint(100, 9999)
+                self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
                 counter = counter + 1
                 # TODO Manage the product level cleanup and final expected custom channel format
 
