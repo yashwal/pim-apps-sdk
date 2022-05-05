@@ -2,7 +2,7 @@ import csv
 import os
 import tempfile
 import zipfile
-
+import requests
 import pandas as pd
 
 os.environ['A2C_BASE_URL'] = "https://api.api2cart.com/"
@@ -46,6 +46,15 @@ def get_pepperx_domain():
     print(f" {env} ---- {url} ")
     return url
 
+def download_url(url):
+    get_response = requests.get(url,stream=True)
+    file_name  = url.split("/")[-1]
+    with open(file_name, 'wb') as f:
+        for chunk in get_response.iter_content(chunk_size=1024):
+            if chunk: # filter out keep-alive new chunks
+                f.write(chunk)
+
+    return file_name
 
 def write_csv_file(data, delimiter="\t", filename="IndexedExport.csv"):
     with open(filename, 'w') as csvfile:
