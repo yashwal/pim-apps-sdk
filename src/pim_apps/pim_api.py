@@ -41,6 +41,7 @@ class PIMChannelAPI(object):
         return response["data"]["total"]
 
     def __iter__(self):
+        self.scroll_id = None
         self.n = 0
         self.max = -1
         return self
