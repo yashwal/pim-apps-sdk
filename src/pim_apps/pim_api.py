@@ -344,18 +344,21 @@ class ProductProcessor(object):
         try:
             for product in self.pim_channel_api:
                 # product = transformer.transform(product)
-                tsv_product = list()
-                for schema_key in properties_schema:
-                    data = product.get(schema_key, '')
+                try:
+                    tsv_product = list()
+                    for schema_key in properties_schema:
+                        data = product.get(schema_key, '')
 
-                    tsv_product.append(data)
-                # print(tsv_product)
-                tsv_products.append(tsv_product)
-                pid = product.get("id") or product.get("sku") or random.randint(100, 9999)
-                self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
-                counter = counter + 1
-                # TODO Manage the product level cleanup and final expected custom channel format
-
+                        tsv_product.append(data)
+                    # print(tsv_product)
+                    tsv_products.append(tsv_product)
+                    pid = product.get("id") or product.get("sku") or random.randint(100, 9999)
+                    self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
+                    counter = counter + 1
+                    # TODO Manage the product level cleanup and final expected custom channel format
+                except Exception as e:
+                    print(e)
+                    print_exc()
             if header:
                 tsv_products.insert(0, properties_schema)
             if fixed_header:
