@@ -91,6 +91,7 @@ class FileParser(object):
 
     def parse_csv(self):
         df = pd.read_csv(self.url, sep=",", header=0)
+        return df
 
     def parse_zip(self):
         zip = zipfile.ZipFile('filename.zip')
@@ -101,9 +102,11 @@ class FileParser(object):
 
     def parse_tsv(self):
         df = pd.read_csv(self.url, sep="\t", header=0)
+        return df
 
     def parse_json(self):
         df = pd.read_json(self.url)
+        return df
 
     #         https://www.dataquest.io/blog/python-json-tutorial/
     # def parse_xml(self):
@@ -112,9 +115,11 @@ class FileParser(object):
 
     def parse_txt(self):
         df = pd.read_csv(self.url, sep=" ")
+        return df
 
     def parse_tsv(self):
         df = pd.read_csv(self.url, sep="\t", header=0)
+        return df
 
     def parse_excel(self):
         xls = pd.ExcelFile(self.url)
