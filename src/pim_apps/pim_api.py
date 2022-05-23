@@ -349,7 +349,10 @@ class ProductProcessor(object):
                     tsv_product = list()
                     for schema_key in properties_schema:
                         data = product.get(schema_key, '')
-
+                        if data:
+                            data = ",".join(data) if isinstance(data, list) else data
+                        else:
+                            data = str(data)
                         tsv_product.append(data)
                     # print(tsv_product)
                     tsv_products.append(tsv_product)
