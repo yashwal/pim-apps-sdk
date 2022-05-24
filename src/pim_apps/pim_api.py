@@ -342,7 +342,7 @@ class ProductProcessor(object):
         # transformer = Transformer(product_schema)
         tsv_products = list()
         template_outout = []
-        self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False)
+        self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False, slice_id=None)
         try:
             for product in self.pim_channel_api:
                 # product = transformer.transform(product)
