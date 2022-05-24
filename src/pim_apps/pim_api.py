@@ -321,7 +321,7 @@ class ProductProcessor(object):
         uploaded_url = self.pim_channel_api.upload_to_s3(file_path)
         return uploaded_url
 
-    def update_export_status(self, status="STARTED", success_file="", failed_file="", stats=None):
+    def update_export_status(self, status="STARTED", success_file="", failed_file="", success_count=0, failed_count=0):
         data = {
             "status": str(status).upper().strip()
         }
@@ -333,15 +333,14 @@ class ProductProcessor(object):
             data["failed_file_download_links"] = {
                 "CSV": failed_file
             }
-        if stats:
-            total = self.pim_channel_api.count() or 0
-            data["export_stats"] = {
-                "total": total
-            }
-            if "success" in stats:
-                data["export_stats"]["success"] = stats["success"] or 0
-            if "failed" in stats:
-                data["export_stats"]["failed"] = stats["failed"] or 0
+        total = self.pim_channel_api.count() or 0
+        data["export_stats"] = {
+            "total": total
+        }
+        if success_count >0:
+            data["export_stats"]["success"] = success_count
+        if failed_count >0:
+            data["export_stats"]["failed"] = failed_count
         self.pim_channel_api.update_export_status(data)
 
     def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="Template_Export.csv"):
