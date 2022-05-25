@@ -348,6 +348,8 @@ class ProductProcessor(object):
         # transformer = Transformer(product_schema)
         tsv_products = list()
         template_outout = []
+        success_count = 0
+        failed_count=0
         self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False, slice_id=None)
         try:
             for product in self.pim_channel_api:
@@ -366,10 +368,12 @@ class ProductProcessor(object):
                     pid = product.get("id") or product.get("sku") or random.randint(100, 9999)
                     self.insert_product_status(pid, "STARTED", f"Product processing started for {pid}")
                     counter = counter + 1
+                    success_count = success_count+1
                     # TODO Manage the product level cleanup and final expected custom channel format
                 except Exception as e:
                     print(e)
                     print_exc()
+                    failed_count = failed_count+1
             if header:
                 tsv_products.insert(0, properties_schema)
             if fixed_header:
@@ -379,6 +383,7 @@ class ProductProcessor(object):
                     header_row_counter += 1
             # print(tsv_products)
             template_outout = write_csv_file(data=tsv_products, delimiter="\t", filename=filename)
+            self.update_export_status(status="PRODUCTS_PROCESSED", success_count=success_count, failed_count=failed_count )
             # template_op_url = self.upload_to_s3(template_outout)
         except Exception as e:
             print_exc()
