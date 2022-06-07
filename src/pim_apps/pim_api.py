@@ -269,7 +269,25 @@ class ProductProcessor(object):
             print_exc()
             print(e)
 
-    # 1. Pulls products and variants from PIM
+    def get_sorted_products_list(self):
+        print("Sorted Product List")
+        all_products = []
+        self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False, slice_id=None)
+        try:
+            for product in self.pim_channel_api:
+                # product = transformer.transform(product)
+                product["pim_id"] = product.get("pim_id") or product.get("id") or product.get("sku") or random.randint(100, 9999)
+                all_products.append(product)
+        except Exception as e:
+            print_exc()
+            print(e)
+
+        sorted_product = sorted(all_products, key=lambda d: d['pim_id'])
+        return sorted_product
+
+
+
+# 1. Pulls products and variants from PIM
     def iterate_products(self, process_product):
         self.processed_list = []
         try:
