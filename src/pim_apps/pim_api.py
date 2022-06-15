@@ -301,6 +301,8 @@ class ProductProcessor(object):
             return
 
         self.product_counter = 0
+        self.success_count = 0
+        self.failed_count = 0
         for product in self.pim_channel_api:
             self.product_counter += 1
             try:
@@ -308,8 +310,15 @@ class ProductProcessor(object):
                     pid = product.get("id") or random.randint(100, 9999)
                     # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
                     proccessed_product, status = process_product(product, self.product_counter)
+                    if status == "SUCCESS":
+                        self.success_count += 1
+                    elif status == "FAILED":
+                        self.failed_count += 1
                     self.processed_list.append(proccessed_product)
-            #                     self.insert_product_status(pid,status , "Product processing completed")
+                    # self.insert_product_status(pid,status , "Product processing completed")
+
+                    if self.product_counter % 5 == 0:
+                        self.update_export_status(status="EXPORT_IN_PROGRESS", success_count=self.success_count, failed_count=self.failed_count)
 
             except Exception as e:
                 print_exc()
