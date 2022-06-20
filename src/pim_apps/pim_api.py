@@ -323,6 +323,8 @@ class ProductProcessor(object):
             except Exception as e:
                 print_exc()
                 raise e
+        self.update_export_status(status="EXPORTED", success_count=self.success_count,
+                                  failed_count=self.failed_count)
 
     def get_processed_products(self):
         return self.processed_list
