@@ -33,35 +33,62 @@ class PIMChannelAPI(object):
         self.slice_id = slice_id
         self.max_slice = max_slice
         self.scroll_id = None
+        self.is_products_split = self.is_products_post_split()
 
     def count(self):
-        response = self.get(count=0)
+        response = self.get(count=20)
         if "data" not in response or "total" not in response["data"]:
             raise ValueError("Invalid response returned by PIM")
         return response["data"]["total"]
+
+    def is_products_post_split(self):
+        response = self.get(count=20)
+        if "data" not in response or "total" not in response["data"]:
+            raise ValueError("Invalid response returned by PIM")
+
+        return True if  response["data"]["total"] < response["data"]["count"] else False
 
     def __iter__(self):
         self.scroll_id = None
         self.n = 0
         self.max = -1
+        self.iter_max = -1
         return self
 
     def __next__(self):
-        if self.max == -1 or self.n < self.max:
-            index = self.n % self.cache_count
-            if index == 0:
-                response = self.get(count=self.cache_count, type="SCROLL", scroll_id=self.scroll_id)
-                if "data" not in response or "products" not in response["data"] or "scrollId" not in response["data"]:
-                    raise ValueError("Invalid response returned by PIM")
-                products = response["data"]["products"]
-                self.scroll_id = response["data"]["scrollId"]
-                self.max = response["data"]["total"]
-                self.cache = products
-            self.n += 1
-            if len(self.cache) > index:
-                return self.cache[index]
+        if not self.is_products_split:
+            if self.max == -1 or self.n < self.max:
+                index = self.n % self.cache_count
+                if index == 0:
+                    response = self.get(count=self.cache_count, type="SCROLL", scroll_id=self.scroll_id)
+                    if "data" not in response or "products" not in response["data"] or "scrollId" not in response["data"]:
+                        raise ValueError("Invalid response returned by PIM")
+                    products = response["data"]["products"]
+                    self.scroll_id = response["data"]["scrollId"]
+                    self.max = response["data"]["total"]
+                    self.cache = products
+                self.n += 1
+                if len(self.cache) > index:
+                    return self.cache[index]
+            else:
+                raise StopIteration
         else:
-            raise StopIteration
+            if self.max == -1 or (self.n < self.max or self.n < self.iter_max):
+                index = self.n % self.iter_max
+                if index == 0:
+                    response = self.get(count=self.cache_count, type="SCROLL", scroll_id=self.scroll_id)
+                    if "data" not in response or "products" not in response["data"] or "scrollId" not in response["data"]:
+                        raise ValueError("Invalid response returned by PIM")
+                    products = response["data"]["products"]
+                    self.scroll_id = response["data"]["scrollId"]
+                    self.max = response["data"]["total"]
+                    self.iter_max = response["data"]["count"]
+                    self.cache = products
+                self.n += 1
+                if len(self.cache) > index:
+                    return self.cache[index]
+            else:
+                raise StopIteration
 
     def is_retryable(self, count, page, scroll_id, retry_count, message):
         retry_count = retry_count - 1
@@ -348,7 +375,7 @@ class ProductProcessor(object):
         uploaded_url = self.pim_channel_api.upload_to_s3(file_path)
         return uploaded_url
 
-    def update_export_status(self, status="STARTED", success_file="", failed_file="", success_count=0, failed_count=0):
+    def update_export_status(self, status="STARTED", success_file="", failed_file="", success_count=None, failed_count=None):
         data = {
             "status": str(status).upper().strip()
         }
@@ -364,9 +391,9 @@ class ProductProcessor(object):
         data["export_stats"] = {
             "total": total
         }
-        if success_count >0:
+        if success_count and success_count >0:
             data["export_stats"]["success"] = success_count
-        if failed_count >0:
+        if failed_count and failed_count >0:
             data["export_stats"]["failed"] = failed_count
         self.pim_channel_api.update_export_status(data)
 
