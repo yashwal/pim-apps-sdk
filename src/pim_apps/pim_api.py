@@ -42,11 +42,18 @@ class PIMChannelAPI(object):
         return response["data"]["total"]
 
     def is_products_post_split(self):
-        response = self.get(count=20)
-        if "data" not in response or "total" not in response["data"]:
-            raise ValueError("Invalid response returned by PIM")
+        try:
+            response = self.get(count=20)
+            if "data" not in response or "total" not in response["data"]:
+                raise ValueError("Invalid response returned by PIM")
 
-        return True if  response["data"]["total"] < response["data"]["count"] else False
+            return True if  response["data"]["total"] < response["data"]["count"] else False
+        except Exception as e:
+            # logging.error(e)
+            print_exc()
+            print(e)
+            return False
+
 
     def __iter__(self):
         self.scroll_id = None
