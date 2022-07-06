@@ -281,7 +281,7 @@ class ProductProcessor(object):
         self.api_key = api_key
         self.task_id = task_id
         self.reference_id = reference_id
-        app_user_instance = AppUserPIM(self.api_key)
+        self.app_user_instance = AppUserPIM(self.api_key)
         self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
 
     def insert_product_status(self, pid="", status="SUCCESS", status_desc=""):
