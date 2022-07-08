@@ -47,6 +47,7 @@ class PIMChannelAPI(object):
             if "data" not in response or "total" not in response["data"]:
                 raise ValueError("Invalid response returned by PIM")
 
+            self.products_total = response["data"]["total"]
             return True if  response["data"]["total"] < response["data"]["count"] else False
         except Exception as e:
             # logging.error(e)
@@ -152,14 +153,14 @@ class PIMChannelAPI(object):
             print("!!!!!! pim Products pull faied after " + str(time_taken_to_pull_product) + "  : {}".
                   format(str(json.dumps(req))))
             print("!!!!!! pim Products pull faied with error   : {}".
-                  format(str(json.dumps(response))))
+                  format(str(json.dumps(response.text))))
             self.is_retryable(count, page, scroll_id, retry_count, msg)
         elif response.status_code != 200:
             # print(msg)
             print("!!!!!! pim Products pull faied after " + str(time_taken_to_pull_product) + "  : {}".
                   format(str(json.dumps(req))))
             print("!!!!!! pim Products pull faied with error   : {}".
-                  format(str(json.dumps(response))))
+                  format(str(json.dumps(response.text))))
             raise ValueError(
                 "Pim Product Pull failed due non " + str(response.status_code) + " status " + response.text
                 + "==> Request Object >> " + str(req))
@@ -396,14 +397,15 @@ class ProductProcessor(object):
             data["failed_file_download_links"] = {
                 "CSV": failed_file
             }
-        total = self.pim_channel_api.count() or 0
-        data["export_stats"] = {
-            "total": total
-        }
-        if success_count and success_count >0:
-            data["export_stats"]["success"] = success_count
-        if failed_count and failed_count >0:
-            data["export_stats"]["failed"] = failed_count
+        total = self.pim_channel_api.products_total or 0
+        if (success_count and success_count >0) or (failed_count and failed_count >0):
+            data["export_stats"] = {}
+            if total and total >0:
+                data["export_stats"]["total"]=  total
+            if success_count and success_count >0:
+                data["export_stats"]["success"] = success_count
+            if failed_count and failed_count >0:
+                data["export_stats"]["failed"] = failed_count
         self.pim_channel_api.update_export_status(data)
 
     def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="Template_Export.csv"):
