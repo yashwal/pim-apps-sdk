@@ -223,7 +223,7 @@ class PIMChannelAPI(object):
     # @title Enter CSV file name to be generated for the API response and run the cells
     def generate_csv(self, data, file_name="API_data_fetch", zipped=False):
         named_tuple = time.localtime()  # get struct_time
-        time_string = time.strftime("-%m-%d-2021-%H-%M", named_tuple)
+        time_string = time.strftime("-%m-%d-%y-%H-%M", named_tuple)
         df = pd.DataFrame(data)
         file_name = f'{file_name}{time_string}.csv'
 
@@ -330,41 +330,52 @@ class ProductProcessor(object):
             # pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
             total_products = self.pim_channel_api.get()['data'].get('total', 0)
             print(f"Received {total_products} products for the job processing")
-        except Exception as e:
+       
+            ts = f"PIM_ERROR_{time.time()}"
+
+            self.product_counter = 0
+            self.success_count = 0
+            self.failed_count = 0
+            for product in self.pim_channel_api:
+                self.product_counter += 1
+                try:
+                    if product is not None:
+                        pid = product.get("id") or random.randint(100, 9999)
+                        # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
+                        proccessed_product, status = process_product(product, self.product_counter)
+                        if status == "SUCCESS":
+                            self.success_count += 1
+                        elif status == "FAILED":
+                            self.failed_count += 1
+                        self.processed_list.append(proccessed_product)
+                        # self.insert_product_status(pid,status , "Product processing completed")
+
+                        if self.product_counter % 5 == 0:
+                            self.update_export_status(status="EXPORT_IN_PROGRESS", success_count=self.success_count, failed_count=self.failed_count)
+
+                except Exception as e:
+                    print_exc()
+                    error_pid = pid or f"export_pid_{counter}"
+                    self.insert_product_status(self, pid=error_pid , status="FAILED", status_desc=f"{json.dumps(e)}")
+
+            if auto_finish:
+                self.update_export_status(status="EXPORTED", success_count=self.success_count,
+                                      failed_count=self.failed_count)
+            else:
+                self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
+                                      failed_count=self.failed_count)
+         except ValueError as e:
             print(e)
             print_exc()
+            self.insert_product_status(self, pid=ts , status="FAILED", status_desc=f"{json.dumps(e)}")
             return
-
-        self.product_counter = 0
-        self.success_count = 0
-        self.failed_count = 0
-        for product in self.pim_channel_api:
-            self.product_counter += 1
-            try:
-                if product is not None:
-                    pid = product.get("id") or random.randint(100, 9999)
-                    # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
-                    proccessed_product, status = process_product(product, self.product_counter)
-                    if status == "SUCCESS":
-                        self.success_count += 1
-                    elif status == "FAILED":
-                        self.failed_count += 1
-                    self.processed_list.append(proccessed_product)
-                    # self.insert_product_status(pid,status , "Product processing completed")
-
-                    if self.product_counter % 5 == 0:
-                        self.update_export_status(status="EXPORT_IN_PROGRESS", success_count=self.success_count, failed_count=self.failed_count)
-
-            except Exception as e:
-                print_exc()
-                raise e
-                
-        if auto_finish:
-            self.update_export_status(status="EXPORTED", success_count=self.success_count,
-                                  failed_count=self.failed_count)
-        else:
-            self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
-                                  failed_count=self.failed_count)
+         except Exception as e:
+            print(e)
+            print_exc()
+            self.insert_product_status(self, pid=ts , status="FAILED", status_desc=f"{json.dumps(e)}")
+            return
+        
+        
             
 
     def get_processed_products(self):
