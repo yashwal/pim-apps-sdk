@@ -327,12 +327,9 @@ class ProductProcessor(object):
         self.processed_list = []
         try:
             counter = 1
-            # pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
             total_products = self.pim_channel_api.get()['data'].get('total', 0)
             print(f"Received {total_products} products for the job processing")
-       
             ts = f"PIM_ERROR_{time.time()}"
-
             self.product_counter = 0
             self.success_count = 0
             self.failed_count = 0
@@ -348,8 +345,6 @@ class ProductProcessor(object):
                         elif status == "FAILED":
                             self.failed_count += 1
                         self.processed_list.append(proccessed_product)
-                        # self.insert_product_status(pid,status , "Product processing completed")
-
                         if self.product_counter % 5 == 0:
                             self.update_export_status(status="EXPORT_IN_PROGRESS", success_count=self.success_count, failed_count=self.failed_count)
 
@@ -364,12 +359,12 @@ class ProductProcessor(object):
             else:
                 self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
                                       failed_count=self.failed_count)
-         except ValueError as e:
+        except ValueError as e:
             print(e)
             print_exc()
             self.insert_product_status(self, pid=ts , status="FAILED", status_desc=f"{json.dumps(e)}")
             return
-         except Exception as e:
+        except Exception as e:
             print(e)
             print_exc()
             self.insert_product_status(self, pid=ts , status="FAILED", status_desc=f"{json.dumps(e)}")
