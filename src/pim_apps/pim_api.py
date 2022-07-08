@@ -351,7 +351,7 @@ class ProductProcessor(object):
                 except Exception as e:
                     print_exc()
                     error_pid = pid or f"export_pid_{counter}"
-                    self.insert_product_status(self, pid=error_pid , status="FAILED", status_desc=f"{json.dumps(e)}")
+                    self.insert_product_status(self, pid=error_pid , status="FAILED", status_desc=f"{str(e)}")
 
             if auto_finish:
                 self.update_export_status(status="EXPORTED", success_count=self.success_count,
