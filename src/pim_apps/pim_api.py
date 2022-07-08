@@ -323,7 +323,7 @@ class ProductProcessor(object):
 
 
 # 1. Pulls products and variants from PIM
-    def iterate_products(self, process_product):
+    def iterate_products(self, process_product, auto_finish=True):
         self.processed_list = []
         try:
             counter = 1
@@ -358,8 +358,14 @@ class ProductProcessor(object):
             except Exception as e:
                 print_exc()
                 raise e
-        self.update_export_status(status="EXPORTED", success_count=self.success_count,
+                
+        if auto_finish:
+            self.update_export_status(status="EXPORTED", success_count=self.success_count,
                                   failed_count=self.failed_count)
+        else:
+            self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
+                                  failed_count=self.failed_count)
+            
 
     def get_processed_products(self):
         return self.processed_list
