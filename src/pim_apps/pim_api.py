@@ -47,6 +47,7 @@ class PIMChannelAPI(object):
             if "data" not in response or "total" not in response["data"]:
                 raise ValueError("Invalid response returned by PIM")
 
+            self.products_total = response["data"]["total"]
             return True if  response["data"]["total"] < response["data"]["count"] else False
         except Exception as e:
             # logging.error(e)
@@ -152,14 +153,14 @@ class PIMChannelAPI(object):
             print("!!!!!! pim Products pull faied after " + str(time_taken_to_pull_product) + "  : {}".
                   format(str(json.dumps(req))))
             print("!!!!!! pim Products pull faied with error   : {}".
-                  format(str(json.dumps(response))))
+                  format(str(json.dumps(response.text))))
             self.is_retryable(count, page, scroll_id, retry_count, msg)
         elif response.status_code != 200:
             # print(msg)
             print("!!!!!! pim Products pull faied after " + str(time_taken_to_pull_product) + "  : {}".
                   format(str(json.dumps(req))))
             print("!!!!!! pim Products pull faied with error   : {}".
-                  format(str(json.dumps(response))))
+                  format(str(json.dumps(response.text))))
             raise ValueError(
                 "Pim Product Pull failed due non " + str(response.status_code) + " status " + response.text
                 + "==> Request Object >> " + str(req))
@@ -222,7 +223,7 @@ class PIMChannelAPI(object):
     # @title Enter CSV file name to be generated for the API response and run the cells
     def generate_csv(self, data, file_name="API_data_fetch", zipped=False):
         named_tuple = time.localtime()  # get struct_time
-        time_string = time.strftime("-%m-%d-2021-%H-%M", named_tuple)
+        time_string = time.strftime("-%m-%d-%y-%H-%M", named_tuple)
         df = pd.DataFrame(data)
         file_name = f'{file_name}{time_string}.csv'
 
@@ -322,43 +323,55 @@ class ProductProcessor(object):
 
 
 # 1. Pulls products and variants from PIM
-    def iterate_products(self, process_product):
+    def iterate_products(self, process_product, auto_finish=True):
         self.processed_list = []
         try:
             counter = 1
-            # pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
             total_products = self.pim_channel_api.get()['data'].get('total', 0)
             print(f"Received {total_products} products for the job processing")
+            ts = f"PIM_ERROR_{time.time()}"
+            self.product_counter = 0
+            self.success_count = 0
+            self.failed_count = 0
+            for product in self.pim_channel_api:
+                self.product_counter += 1
+                try:
+                    if product is not None:
+                        pid = product.get("id") or random.randint(100, 9999)
+                        # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
+                        proccessed_product, status = process_product(product, self.product_counter)
+                        if status == "SUCCESS":
+                            self.success_count += 1
+                        elif status == "FAILED":
+                            self.failed_count += 1
+                        self.processed_list.append(proccessed_product)
+                        if self.product_counter % 5 == 0:
+                            self.update_export_status(status="EXPORT_IN_PROGRESS", success_count=self.success_count, failed_count=self.failed_count)
+
+                except Exception as e:
+                    print_exc()
+                    error_pid = pid or f"export_pid_{counter}"
+                    self.insert_product_status(self, pid=error_pid , status="FAILED", status_desc=f"{json.dumps(e)}")
+
+            if auto_finish:
+                self.update_export_status(status="EXPORTED", success_count=self.success_count,
+                                      failed_count=self.failed_count)
+            else:
+                self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
+                                      failed_count=self.failed_count)
+        except ValueError as e:
+            print(e)
+            print_exc()
+            self.insert_product_status(self, pid=ts , status="FAILED", status_desc=f"{json.dumps(e)}")
+            return
         except Exception as e:
             print(e)
             print_exc()
+            self.insert_product_status(self, pid=ts , status="FAILED", status_desc=f"{json.dumps(e)}")
             return
-
-        self.product_counter = 0
-        self.success_count = 0
-        self.failed_count = 0
-        for product in self.pim_channel_api:
-            self.product_counter += 1
-            try:
-                if product is not None:
-                    pid = product.get("id") or random.randint(100, 9999)
-                    # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
-                    proccessed_product, status = process_product(product, self.product_counter)
-                    if status == "SUCCESS":
-                        self.success_count += 1
-                    elif status == "FAILED":
-                        self.failed_count += 1
-                    self.processed_list.append(proccessed_product)
-                    # self.insert_product_status(pid,status , "Product processing completed")
-
-                    if self.product_counter % 5 == 0:
-                        self.update_export_status(status="EXPORT_IN_PROGRESS", success_count=self.success_count, failed_count=self.failed_count)
-
-            except Exception as e:
-                print_exc()
-                raise e
-        self.update_export_status(status="EXPORTED", success_count=self.success_count,
-                                  failed_count=self.failed_count)
+        
+        
+            
 
     def get_processed_products(self):
         return self.processed_list
@@ -396,14 +409,15 @@ class ProductProcessor(object):
             data["failed_file_download_links"] = {
                 "CSV": failed_file
             }
-        total = self.pim_channel_api.count() or 0
-        data["export_stats"] = {
-            "total": total
-        }
-        if success_count and success_count >0:
-            data["export_stats"]["success"] = success_count
-        if failed_count and failed_count >0:
-            data["export_stats"]["failed"] = failed_count
+        total = self.pim_channel_api.products_total or 0
+        if (success_count and success_count >0) or (failed_count and failed_count >0):
+            data["export_stats"] = {}
+            if total and total >0:
+                data["export_stats"]["total"]=  total
+            if success_count and success_count >0:
+                data["export_stats"]["success"] = success_count
+            if failed_count and failed_count >0:
+                data["export_stats"]["failed"] = failed_count
         self.pim_channel_api.update_export_status(data)
 
     def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="Template_Export.csv"):
