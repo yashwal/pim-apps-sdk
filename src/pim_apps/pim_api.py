@@ -139,7 +139,7 @@ class PIMChannelAPI(object):
 
         time_before_pull_product = (int(round(time_time() * 1000)))
         try:
-            response = requests.post(url, headers=headers, json=req)
+            response = requests.post(url, headers=headers, json=req, timeout=180)
         except ConnectionError as e:
             msg = "Pim Product Pull failed because of " + str(e) + "==> Request Object >> " + str(req) \
                   + " for org "
