@@ -33,6 +33,7 @@ class PIMChannelAPI(object):
         self.slice_id = slice_id
         self.max_slice = max_slice
         self.scroll_id = None
+        self.products_total = 0
         self.is_products_split = self.is_products_post_split()
 
     def count(self):
