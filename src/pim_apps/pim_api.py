@@ -222,7 +222,7 @@ class PIMChannelAPI(object):
         return json.loads(response.text)
 
     # @title Enter CSV file name to be generated for the API response and run the cells
-    def generate_csv(self, data, file_name="API_data_fetch", zipped=False):
+    def generate_csv(self, data, file_name="API_data_fetch", zipped=False, index=False):
         named_tuple = time.localtime()  # get struct_time
         time_string = time.strftime("-%m-%d-%y-%H-%M", named_tuple)
         df = pd.DataFrame(data)
@@ -232,11 +232,11 @@ class PIMChannelAPI(object):
             compression_opts = dict(method='zip',
                                     archive_name=f'{file_name}')
             final_local_url = f'{file_name.split(".")[0]}.zip'
-            df.to_csv(final_local_url, index=False,
+            df.to_csv(final_local_url, index=index,
                       compression=compression_opts)
         else:
             final_local_url = file_name
-            df.to_csv(final_local_url)
+            df.to_csv(final_local_url, index=index)
         return final_local_url
 
     def upload_to_s3(self, filename):
