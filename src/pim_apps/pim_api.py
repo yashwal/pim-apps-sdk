@@ -33,6 +33,7 @@ class PIMChannelAPI(object):
         self.slice_id = slice_id
         self.max_slice = max_slice
         self.scroll_id = None
+        self.products_total = 0
         self.is_products_split = self.is_products_post_split()
 
     def count(self):
@@ -138,7 +139,7 @@ class PIMChannelAPI(object):
 
         time_before_pull_product = (int(round(time_time() * 1000)))
         try:
-            response = requests.post(url, headers=headers, json=req)
+            response = requests.post(url, headers=headers, json=req, timeout=180)
         except ConnectionError as e:
             msg = "Pim Product Pull failed because of " + str(e) + "==> Request Object >> " + str(req) \
                   + " for org "
@@ -221,7 +222,7 @@ class PIMChannelAPI(object):
         return json.loads(response.text)
 
     # @title Enter CSV file name to be generated for the API response and run the cells
-    def generate_csv(self, data, file_name="API_data_fetch", zipped=False):
+    def generate_csv(self, data, file_name="API_data_fetch", zipped=False, index=False):
         named_tuple = time.localtime()  # get struct_time
         time_string = time.strftime("-%m-%d-%y-%H-%M", named_tuple)
         df = pd.DataFrame(data)
@@ -231,11 +232,11 @@ class PIMChannelAPI(object):
             compression_opts = dict(method='zip',
                                     archive_name=f'{file_name}')
             final_local_url = f'{file_name.split(".")[0]}.zip'
-            df.to_csv(final_local_url, index=False,
+            df.to_csv(final_local_url, index=index,
                       compression=compression_opts)
         else:
             final_local_url = file_name
-            df.to_csv(final_local_url)
+            df.to_csv(final_local_url, index=index)
         return final_local_url
 
     def upload_to_s3(self, filename):
