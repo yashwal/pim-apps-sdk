@@ -49,7 +49,7 @@ def get_pepperx_domain():
 def download_url(url, file_name=""):
     get_response = requests.get(url,stream=True)
     if file_name=="":
-      file_name  = url.split("/")[-1]
+        file_name  = url.split("/")[-1]
     with open(file_name, 'wb') as f:
         for chunk in get_response.iter_content(chunk_size=1024):
             if chunk: # filter out keep-alive new chunks
