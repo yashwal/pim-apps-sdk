@@ -224,14 +224,16 @@ class ProductStatus(object):
                     self.product_trassaction_buffer =2
                     batch_data = self.product_trassaction_buffer_1
                     self.product_trassaction_buffer_1 = []
+                    print("Sending  1st buffer")
             elif self.product_trassaction_buffer ==2:
-                print("Adding to 1st buffer")
+                print("Adding to 2nd buffer")
                 data["task_result_id"] = self.task_id
                 self.product_trassaction_buffer_2.append(data)
                 if len(self.product_trassaction_buffer_2) == 5:
                     self.product_trassaction_buffer =1
                     batch_data = self.product_trassaction_buffer_2
                     self.product_trassaction_buffer_2 = []
+                    print("Sending 2nd buffer")
 
             if len(batch_data) > 0:
                 payload = json.dumps({"entries" : batch_data})
