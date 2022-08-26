@@ -177,9 +177,7 @@ class AppUserPIM(object):
 class ProductStatus(object):
     def __init__(self, task_id):
         self.task_id = task_id
-        self.product_trassaction_buffer_1 = []
-        self.product_trassaction_buffer_2 = []
-        self.product_trassaction_buffer = 1
+        self.product_trassaction_buffer = []
 
     def post_started_message(self, product_id=""):
         self.success_msg = []
@@ -214,26 +212,14 @@ class ProductStatus(object):
     def post(self, data):
         try:
             url = f"{get_pepperx_domain()}api/v1/task/product/transaction/bulk"
-
             batch_data = []
-            if self.product_trassaction_buffer == 1:
-                print("Adding to 1st buffer")
-                data["task_result_id"] = self.task_id
-                self.product_trassaction_buffer_1.append(data)
-                if len(self.product_trassaction_buffer_1) == 5:
-                    self.product_trassaction_buffer =2
-                    batch_data = self.product_trassaction_buffer_1
-                    self.product_trassaction_buffer_1 = []
-                    print("Sending  1st buffer")
-            elif self.product_trassaction_buffer ==2:
-                print("Adding to 2nd buffer")
-                data["task_result_id"] = self.task_id
-                self.product_trassaction_buffer_2.append(data)
-                if len(self.product_trassaction_buffer_2) == 5:
-                    self.product_trassaction_buffer =1
-                    batch_data = self.product_trassaction_buffer_2
-                    self.product_trassaction_buffer_2 = []
-                    print("Sending 2nd buffer")
+            data["task_result_id"] = self.task_id
+            self.product_trassaction_buffer.append(data)
+            if len(self.product_trassaction_buffer) % 5 == 0:
+                batch_data = self.product_trassaction_buffer
+                self.product_trassaction_buffer = []
+                print("Sending  bulk  buffer")
+
 
             if len(batch_data) > 0:
                 payload = json.dumps({"entries" : batch_data})

@@ -288,9 +288,10 @@ class ProductProcessor(object):
         self.app_user_instance = AppUserPIM(self.api_key)
         self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
         # self.raw_products_list = []
+        self.product_status_instance = ProductStatus(self.task_id)
 
     def insert_product_status(self, pid="", status="SUCCESS", status_desc=""):
-        product_status_instance = ProductStatus(self.task_id)
+
 
         # if "SUCCESS" not in status:
         #     status_msg = status_desc
@@ -299,11 +300,11 @@ class ProductProcessor(object):
 
         try:
             if status == "SUCCESS":
-                product_status_instance.post_success_message(product_id=pid, msg=status_desc)
+                self.product_status_instance.post_success_message(product_id=pid, msg=status_desc)
             elif status == "STARTED":
-                product_status_instance.post_started_message(pid)
+                self.product_status_instance.post_started_message(pid)
             else:
-                product_status_instance.post_error_message(product_id=pid, msg=status_desc)
+                self.product_status_instance.post_error_message(product_id=pid, msg=status_desc)
         except Exception as e:
             print_exc()
             print(e)
@@ -366,7 +367,7 @@ class ProductProcessor(object):
         self.processed_list = []
         try:
             counter = 1
-
+            status = True
             total_products = self.pim_channel_api.get()['data'].get('total', 0)
             if total_products > 0:
                 raw_products_list = self.fetch_all_pim_products()
