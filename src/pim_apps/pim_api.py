@@ -287,6 +287,7 @@ class ProductProcessor(object):
         self.reference_id = reference_id
         self.app_user_instance = AppUserPIM(self.api_key)
         self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
+        # self.raw_products_list = []
 
     def insert_product_status(self, pid="", status="SUCCESS", status_desc=""):
         product_status_instance = ProductStatus(self.task_id)
@@ -347,21 +348,45 @@ class ProductProcessor(object):
             error_pid = pid or f"export_pid_{str(time.time())}"
             self.insert_product_status(self, pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
 
+
+    def fetch_all_pim_products(self):
+        raw_products_list = []
+        export_data = self.pim_channel_api.get_export_details()
+        # export_details = export_data["data"]["metaInfo"]["export"]
+
+        for product in self.pim_channel_api:
+            raw_products_list.append(product)
+
+
+        return raw_products_list
+
+
+
     def iterate_products(self, process_product, auto_finish=True):
         self.processed_list = []
         try:
             counter = 1
+
             total_products = self.pim_channel_api.get()['data'].get('total', 0)
-            # if total_products < 25000:
-            print(f"Received {total_products} products for the job processing")
-            ts = f"PIM_ERROR_{time.time()}"
-            self.product_counter = 0
-            self.success_count = 0
-            self.failed_count = 0
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                for product in self.pim_channel_api:
-                    self.product_counter += 1
-                    executor.submit(self.process_pim_product, product, process_product)
+            if total_products > 0:
+                raw_products_list = self.fetch_all_pim_products()
+            else:
+                status = False
+
+            if status:
+                # if total_products < 25000:
+                print(f"Received {total_products} products for the job processing")
+                ts = f"PIM_ERROR_{time.time()}"
+                self.product_counter = 0
+                self.success_count = 0
+                self.failed_count = 0
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    for product in raw_products_list:
+                        self.product_counter += 1
+                        executor.submit(self.process_pim_product, product, process_product)
+            else:
+                self.update_export_status(status="PRODUCTS_FAILED", success_count=self.success_count,
+                                          failed_count=self.failed_count)
             # for product in self.pim_channel_api:
             #     self.product_counter += 1
             #     self.process_pim_product(product, process_product)
