@@ -14,5 +14,3 @@ from .pim_apps.pim_api import ProductProcessor, PIMChannelAPI
 #         self.job_processor = ProductProcessor(self.api_key, self.reference_id, self.task_id)
 #
 #
-
-
