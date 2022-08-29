@@ -332,9 +332,11 @@ class ProductProcessor(object):
         # print(f"Processing product no {counter}")
         try:
             if product is not None:
+
                 pid = product.get("id") or random.randint(100, 9999)
                 # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
                 proccessed_product, status = process_product(product, self.product_counter)
+                self.product_counter += 1
                 if status == "SUCCESS":
                     self.success_count += 1
                 elif status == "FAILED":
@@ -383,7 +385,7 @@ class ProductProcessor(object):
                 self.failed_count = 0
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     for product in raw_products_list:
-                        self.product_counter += 1
+
                         executor.submit(self.process_pim_product, product, process_product)
             else:
                 self.update_export_status(status="PRODUCTS_FAILED", success_count=self.success_count,
