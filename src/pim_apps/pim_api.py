@@ -305,6 +305,7 @@ class ProductProcessor(object):
                 self.product_status_instance.post_started_message(pid)
             else:
                 self.product_status_instance.post_error_message(product_id=pid, msg=status_desc)
+
         except Exception as e:
             print_exc()
             print(e)
@@ -332,7 +333,6 @@ class ProductProcessor(object):
         # print(f"Processing product no {counter}")
         try:
             if product is not None:
-
                 pid = product.get("id") or random.randint(100, 9999)
                 # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
                 proccessed_product, status = process_product(product, self.product_counter)
@@ -349,7 +349,10 @@ class ProductProcessor(object):
         except Exception as e:
             print_exc()
             error_pid = pid or f"export_pid_{str(time.time())}"
+            self.failed_count += 1
             self.insert_product_status(self, pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
+
+
 
 
     def fetch_all_pim_products(self):
@@ -365,7 +368,7 @@ class ProductProcessor(object):
 
 
 
-    def iterate_products(self, process_product, auto_finish=True):
+    def iterate_products(self, process_product, auto_finish=True, multiThread=True):
         self.processed_list = []
         try:
             counter = 1
@@ -383,10 +386,14 @@ class ProductProcessor(object):
                 self.product_counter = 0
                 self.success_count = 0
                 self.failed_count = 0
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    for product in raw_products_list:
+                if multiThread:
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        for product in raw_products_list:
 
-                        executor.submit(self.process_pim_product, product, process_product)
+                            executor.submit(self.process_pim_product, product, process_product)
+                else:
+                    for product in raw_products_list:
+                        self.process_pim_product(product, process_product)
             else:
                 self.update_export_status(status="PRODUCTS_FAILED", success_count=self.success_count,
                                           failed_count=self.failed_count)
