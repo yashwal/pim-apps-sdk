@@ -370,6 +370,7 @@ class ProductProcessor(object):
 
     def iterate_products(self, process_product, auto_finish=True, multiThread=True):
         self.processed_list = []
+        ts = f"PIM_ERROR_{time.time()}"
         try:
             counter = 1
             status = True
@@ -382,7 +383,7 @@ class ProductProcessor(object):
             if status:
                 # if total_products < 25000:
                 print(f"Received {total_products} products for the job processing")
-                ts = f"PIM_ERROR_{time.time()}"
+
                 self.product_counter = 0
                 self.success_count = 0
                 self.failed_count = 0
