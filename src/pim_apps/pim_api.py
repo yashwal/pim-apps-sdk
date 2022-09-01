@@ -370,6 +370,9 @@ class ProductProcessor(object):
 
     def iterate_products(self, process_product, auto_finish=True, multiThread=True):
         self.processed_list = []
+        self.product_counter = 0
+        self.success_count = 0
+        self.failed_count = 0
         ts = f"PIM_ERROR_{time.time()}"
         try:
             counter = 1
@@ -384,9 +387,7 @@ class ProductProcessor(object):
                 # if total_products < 25000:
                 print(f"Received {total_products} products for the job processing")
 
-                self.product_counter = 0
-                self.success_count = 0
-                self.failed_count = 0
+
                 if multiThread:
                     with concurrent.futures.ThreadPoolExecutor() as executor:
                         for product in raw_products_list:
