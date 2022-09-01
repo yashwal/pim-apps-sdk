@@ -101,13 +101,13 @@ class PIMChannelAPI(object):
             else:
                 raise StopIteration
 
-    def is_retryable(self, count, page, scroll_id, retry_count, message):
+    def is_retryable(self, count, page, type, scroll_id, retry_count, message):
         retry_count = retry_count - 1
         if retry_count == 0:
             raise ValueError(message)
         else:
-            sleep(60)
-            self.get(count=count, page=page, scroll_id=scroll_id, retry_count=retry_count)
+            sleep(15)
+            self.get(count=count, page=page, type=type, scroll_id=scroll_id, retry_count=retry_count)
 
     def get(self, count=20, page=1, type="PAGINATION", scroll_id=None, retry_count=3):
         url = "{}v1/products".format(get_pim_app_domain())
@@ -146,7 +146,7 @@ class PIMChannelAPI(object):
             msg = "Pim Product Pull failed because of " + str(e) + "==> Request Object >> " + str(req) \
                   + " for org "
             print(msg)
-            self.is_retryable(count, page, scroll_id, retry_count, msg)
+            self.is_retryable(count, page, type, scroll_id, retry_count, msg)
         time_taken_to_pull_product = (int(round(time_time() * 1000))) - time_before_pull_product
 
         if response.status_code == 500:
@@ -157,16 +157,18 @@ class PIMChannelAPI(object):
                   format(str(json.dumps(req))))
             print("!!!!!! pim Products pull faied with error   : {}".
                   format(str(json.dumps(response.text))))
-            self.is_retryable(count, page, scroll_id, retry_count, msg)
+            self.is_retryable(count, page, type, scroll_id, retry_count, msg)
         elif response.status_code != 200:
+            msg = f"Pim Product Pull failed with {response.status_code} status {response.text} ==> Request Object >>{str(req)} for org "
             # print(msg)
             print("!!!!!! pim Products pull faied after " + str(time_taken_to_pull_product) + "  : {}".
                   format(str(json.dumps(req))))
             print("!!!!!! pim Products pull faied with error   : {}".
                   format(str(json.dumps(response.text))))
-            raise ValueError(
-                "Pim Product Pull failed due non " + str(response.status_code) + " status " + response.text
-                + "==> Request Object >> " + str(req))
+            # raise ValueError(
+            #     "Pim Product Pull failed due non " + str(response.status_code) + " status " + response.text
+            #     + "==> Request Object >> " + str(req))
+            self.is_retryable(count, page, type, scroll_id, retry_count, msg)
         print("@@@@ Finished fetching total of pim Products pull it took " + str(time_taken_to_pull_product) + "  : {}".
               format(str(json.dumps(req))))
         if "data" not in response.json() or "products" not in response.json()["data"]:
