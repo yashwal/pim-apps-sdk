@@ -402,13 +402,16 @@ class ReaperAdapterUtils:
                         property_mappings.append(merged_prop)
 
                 if len(property_mappings):
+                    print("$$$$$ Updating merged existing property with new rules and meta info")
                     reaper_utils.patch_mappings(adapter_id, property_mappings)
 
             if auto_map and self.cred["org_id"] != "internal":
+                print("$$$$$ Auto mapping the adapter with PIM properties based on PSN & match")
                 # get updated adapter properties & auto map the adapter based on PIM property names
                 updated_adapter_properties = reaper_utils.get_mappings(adapter_id)
                 mapped_adapter_properties = reaper_utils.map_adapter_to_pim(updated_adapter_properties)
                 reaper_utils.patch_mappings(adapter_id, mapped_adapter_properties)
+                print("$$$$$ Done updating mapping of the adapter with PIM properties based on PSN & match")
                 status = "SUCCESS"
         except Exception as e:
             print(e)
