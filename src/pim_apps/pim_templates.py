@@ -412,5 +412,6 @@ class ReaperAdapterUtils:
                 status = "SUCCESS"
         except Exception as e:
             print(e)
+            status = "FAILED"
 
         return status
