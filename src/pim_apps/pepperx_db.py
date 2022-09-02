@@ -281,7 +281,7 @@ class ProductStatus(object):
 
     def get_task_status(self):
 
-        url = f"https://pim.unbxd.io/pepperx/api/v1/task/transaction?task_id={self.task_id}"
+        url = f"{get_pepperx_domain()}api/v1/task/transaction?task_id={self.task_id}"
 
         payload={}
         headers = {
