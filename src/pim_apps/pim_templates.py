@@ -1,10 +1,7 @@
 
 import json
-from enum import Enum
-
 import requests
 from traceback import print_exc
-import random
 import os
 import time
 
@@ -193,16 +190,16 @@ class ReaperAdapterUtils:
         return single_payload
 
     def get_adapter_id(self, request, adapter_desc=None):
-        adapter_name = request.adapter_name
-        adapter_id = request.adapter_id
-        channel_id = request.channel_id
-        org_app_id = request.org_app_id
-        app_custom_id = request.app_custom_id
-        platform_id = request.platform_id
+        adapter_name = request.get("adapter_name", "")
+        adapter_id = request.get("adapter_id", "")
+        channel_id = request.get("channel_id", "")
+        org_app_id = request.get("org_app_id", "")
+        app_custom_id = request.get("app_custom_id", "")
+        platform_id = request.get("platform_id", "")
         if adapter_desc:
-            adapter_desc = adapter_desc or request.description
-        elif request.description:
-            adapter_desc = request.description
+            adapter_desc = adapter_desc or request.get("description", "")
+        elif request.get("description", ""):
+            adapter_desc = request.get("description", "")
 
         if channel_id and org_app_id and adapter_name and app_custom_id:
             adapter_id = self.create_adapter_id(adapter_name, adapter_desc, "CHANNEL_EXPORT", channel_id, org_app_id,
