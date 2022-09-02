@@ -277,3 +277,24 @@ class ProductStatus(object):
         except Exception as e:
             print(e)
             print_exc()
+
+
+    def get_task_status(self):
+
+        url = f"https://pim.unbxd.io/pepperx/api/v1/task/transaction?task_id={self.task_id}"
+
+        payload={}
+        headers = {
+            'accept': 'application/json'
+        }
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        print(response.text)
+        resp = json.load(response.text)
+        data = resp["data"]
+
+        return data
+
+
+
