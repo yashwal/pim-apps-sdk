@@ -291,7 +291,7 @@ class ProductStatus(object):
         response = requests.request("GET", url, headers=headers, data=payload)
 
         print(response.text)
-        resp = json.load(response.text)
+        resp = json.loads(response.text)
         data = resp["data"]
 
         return data
