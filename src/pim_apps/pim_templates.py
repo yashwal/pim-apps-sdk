@@ -1,9 +1,9 @@
-
 import json
 import requests
 from traceback import print_exc
 import os
 import time
+
 
 class ReaperAdapterUtils:
     def __init__(self, cred):
@@ -366,3 +366,51 @@ class ReaperAdapterUtils:
         response = requests.request("POST", url, headers=headers, data=payload)
 
         print(response.text)
+
+    def create_or_update_adapter(self, request, extracted_list=[], adapter_desc="", auto_map=True):
+        status = "IN_PROGRESS"
+        try:
+            # Create or get adapter id based on adapter name or given id
+            reaper_utils = ReaperAdapterUtils(self.cred)
+            adapter_id = reaper_utils.get_adapter_id(request, adapter_desc)
+
+            existing_adapter_details = reaper_utils.get_mappings(adapter_id)
+            existing_adapter_properties = [x["adapter_property_name"] for x in existing_adapter_details]
+            existing_adapter_map = {}
+            for item in existing_adapter_details:
+                name = item['adapter_property_name']
+                existing_adapter_map[name] = item
+            if reaper_utils.is_adapter_present(adapter_id) == 200:
+                property_mappings = []
+                index_pos = 1
+                for property_obj in extracted_list:
+                    adapter_prop_name = property_obj[
+                        "adapter_property_name"] if "adapter_property_name" in property_obj else property_obj
+                    if adapter_prop_name not in existing_adapter_properties:
+                        property_mappings.append(property_obj)
+                    else:
+                        print(
+                            "Handle for overriding validations rules or any other config related to adapter property object")
+                        existing_prop = existing_adapter_map[adapter_prop_name]
+                        required_props = dict((k, (property_obj[k] if k in property_obj else None)) for k in
+                                              ('validation_rules', 'required', 'pim_schema_name'))
+                        merged_prop = existing_prop
+                        for k, v in required_props.items():
+                            if v is not None:
+                                merged_prop[k] = v
+                        # merged_prop = dict(property_obj, **required_props)
+                        property_mappings.append(merged_prop)
+
+                if len(property_mappings):
+                    reaper_utils.patch_mappings(adapter_id, property_mappings)
+
+            if auto_map and self.cred["org_id"] != "internal":
+                # get updated adapter properties & auto map the adapter based on PIM property names
+                updated_adapter_properties = reaper_utils.get_mappings(adapter_id)
+                mapped_adapter_properties = reaper_utils.map_adapter_to_pim(updated_adapter_properties)
+                reaper_utils.patch_mappings(adapter_id, mapped_adapter_properties)
+                status = "SUCCESS"
+        except Exception as e:
+            print(e)
+
+        return status
