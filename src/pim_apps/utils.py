@@ -15,6 +15,14 @@ os.environ['QA_PIM_APP_BASE_URL'] = "http://pimqa-apps.unbxd.io/pim/"
 os.environ['QA_PIM_BASE_URL'] = "http://pimqa.unbxd.io/"
 os.environ['QA_PEPPERX_URL'] = "https://pimqa.unbxd.io/pepperx/"
 
+os.environ['GCP_PIMQA_PIM_APP_BASE_URL'] = "http://gcp-pimqa-apps.unbxd.io/pim/"
+os.environ['GCP_PIMQA_PIM_BASE_URL'] = "http://gcp-pimqa.unbxd.io/"
+os.environ['GCP_PIMQA_PEPPERX_URL'] = "https://gcp-pimqa.unbxd.io/pepperx/"
+
+os.environ['GCP_PIMDEV_PIM_APP_BASE_URL'] = "http://gcp-pimdev-apps.unbxd.io/pim/"
+os.environ['GCP_PIMDEV_PIM_BASE_URL'] = "http://gcp-pimdev.unbxd.io/"
+os.environ['GCP_PIMDEV_PEPPERX_URL'] = "https://gcp-pimdev.unbxd.io/pepperx/"
+
 EXPORT_STATUS = {"STARTED": "STARTED", "CHECK_IN_PROGRESS": "CHECK_IN_PROGRESS",
                  "EXPORT_IN_PROGRESS": "EXPORT_IN_PROGRESS", "PRODUCTS_PROCESSED": "PRODUCTS_PROCESSED",
                  "PRODUCTS_FAILED": "PRODUCTS_FAILED", "EXPORTED": "EXPORTED", "FAILED": "FAILED",
@@ -24,14 +32,57 @@ EXPORT_STATUS = {"STARTED": "STARTED", "CHECK_IN_PROGRESS": "CHECK_IN_PROGRESS",
 
 def get_pim_app_domain():
     env = os.environ['PEPPERX_ENV']
-    url = os.environ['PIM_APP_BASE_URL'] if env == "PROD" else os.environ['QA_PIM_APP_BASE_URL']
+
+    if env == "PROD":
+        url = os.environ['PIM_APP_BASE_URL']
+    elif env == "QA":
+        url = os.environ['QA_PIM_APP_BASE_URL']
+    elif env == "GCP-PIMQA":
+        url = os.environ['GCP_QA_PIM_APP_BASE_URL']
+    elif env == "GCP-PIMDEV":
+        url = os.environ['GCP_DEV_PIM_APP_BASE_URL']
+
+    # TODO: When upgrading to python 3.10.X use the below code
+    # match env:
+    #     case "PROD":
+    #         url = os.environ['PIM_APP_BASE_URL']
+    #     case "QA":
+    #         url = os.environ['QA_PIM_APP_BASE_URL']
+    #     case "GCP-PIMQA":
+    #         url = os.environ['GCP_QA_PIM_APP_BASE_URL']
+    #     case "GCP-PIMDEV":
+    #         url = os.environ['GCP_DEV_PIM_APP_BASE_URL']
+
+    # url = os.environ['PIM_APP_BASE_URL'] if env == "PROD" else os.environ['QA_PIM_APP_BASE_URL']
+
     print(f" {env} ---- {url} ")
     return url
 
 
 def get_pim_domain():
     env = os.environ['PEPPERX_ENV']
-    url = os.environ['PIM_BASE_URL'] if env == "PROD" else os.environ['QA_PIM_BASE_URL']
+
+    if env == "PROD":
+        url = os.environ['PIM_BASE_URL']
+    elif env == "QA":
+        url = os.environ['QA_PIM_BASE_URL']
+    elif env == "GCP-PIMQA":
+        url = os.environ['GCP_PIMQA_PIM_BASE_URL']
+    elif env == "GCP-PIMDEV":
+        url = os.environ['GCP_PIMDEV_PIM_BASE_URL']
+
+    # TODO: When upgrading to python 3.10.X use the below code
+    # match env:
+    #     case "PROD":
+    #         url = os.environ['PIM_APP_BASE_URL']
+    #     case "QA":
+    #         url = os.environ['QA_PIM_APP_BASE_URL']
+    #     case "GCP-PIMQA":
+    #         url = os.environ['GCP_QA_PIM_APP_BASE_URL']
+    #     case "GCP-PIMDEV":
+    #         url = os.environ['GCP_DEV_PIM_APP_BASE_URL']
+
+    # url = os.environ['PIM_BASE_URL'] if env == "PROD" else os.environ['QA_PIM_BASE_URL']
     print(f" {env} ---- {url} ")
     return url
 
@@ -42,20 +93,43 @@ def get_a2c_domain():
 
 def get_pepperx_domain():
     env = os.environ['PEPPERX_ENV']
-    url = os.environ['PEPPERX_URL'] if env == "PROD" else os.environ['QA_PEPPERX_URL']
+
+    if env == "PROD":
+        url = os.environ['PEPPERX_URL']
+    elif env == "QA":
+        url = os.environ['QA_PEPPERX_URL']
+    elif env == "GCP-PIMQA":
+        url = os.environ['GCP_PIMQA_PEPPERX_URL']
+    elif env == "GCP-PIMDEV":
+        url = os.environ['GCP_PIMDEV_PEPPERX_URL']
+
+    # TODO: When upgrading to python 3.10.X use the below code
+    # match env:
+    #     case "PROD":
+    #         url = os.environ['PIM_APP_BASE_URL']
+    #     case "QA":
+    #         url = os.environ['QA_PIM_APP_BASE_URL']
+    #     case "GCP-PIMQA":
+    #         url = os.environ['GCP_QA_PIM_APP_BASE_URL']
+    #     case "GCP-PIMDEV":
+    #         url = os.environ['GCP_DEV_PIM_APP_BASE_URL']
+
+    # url = os.environ['PEPPERX_URL'] if env == "PROD" else os.environ['QA_PEPPERX_URL']
     print(f" {env} ---- {url} ")
     return url
 
+
 def download_url(url, file_name=""):
-    get_response = requests.get(url,stream=True)
-    if file_name=="":
-        file_name  = url.split("/")[-1]
+    get_response = requests.get(url, stream=True)
+    if file_name == "":
+        file_name = url.split("/")[-1]
     with open(file_name, 'wb') as f:
         for chunk in get_response.iter_content(chunk_size=1024):
-            if chunk: # filter out keep-alive new chunks
+            if chunk:  # filter out keep-alive new chunks
                 f.write(chunk)
 
     return file_name
+
 
 def write_csv_file(data, delimiter="\t", filename="IndexedExport.csv"):
     with open(filename, 'w') as csvfile:
@@ -141,9 +215,9 @@ class FileParser(object):
         # properties_template = pd.read_excel(xls, sheet_name="Template", header=0)
         return xls
 
+
 class Dict2Class(object):
 
     def __init__(self, my_dict):
-
         for key in my_dict:
             setattr(self, key, my_dict[key])
