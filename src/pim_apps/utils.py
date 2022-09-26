@@ -38,9 +38,9 @@ def get_pim_app_domain():
     elif env == "QA":
         url = os.environ['QA_PIM_APP_BASE_URL']
     elif env == "GCP-PIMQA":
-        url = os.environ['GCP_QA_PIM_APP_BASE_URL']
+        url = os.environ['GCP_PIMQA_PIM_APP_BASE_URL']
     elif env == "GCP-PIMDEV":
-        url = os.environ['GCP_DEV_PIM_APP_BASE_URL']
+        url = os.environ['GCP_PIMDEV_PIM_APP_BASE_URL']
 
     # TODO: When upgrading to python 3.10.X use the below code
     # match env:
