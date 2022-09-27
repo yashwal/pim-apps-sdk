@@ -530,7 +530,7 @@ class ProductProcessor(object):
                 for product in self.pim_channel_api:
                     # product = transformer.transform(product)
                     try:
-                        # tsv_product = list()
+                        tsv_product = list()
                         for schema_key in properties_schema:
                             data = product.get(schema_key, '')
                             if data:
