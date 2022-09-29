@@ -17,7 +17,7 @@ os.environ['QA_PEPPERX_URL'] = "https://pimqa.unbxd.io/pepperx/"
 
 os.environ['PIMDEV_APP_BASE_URL'] = "http://pimdev-apps.unbxd.io/pim/"
 os.environ['PIMDEV_BASE_URL'] = "http://pimdev.unbxd.io/"
-os.environ['PIMDEV_PEPPERX_URL'] = "https://pimdev.unbxd.io/pepperx/"
+os.environ['PIMDEV_PEPPERX_URL'] = "http://pimdev.unbxd.io/pepperx/"
 
 EXPORT_STATUS = {"STARTED": "STARTED", "CHECK_IN_PROGRESS": "CHECK_IN_PROGRESS",
                  "EXPORT_IN_PROGRESS": "EXPORT_IN_PROGRESS", "PRODUCTS_PROCESSED": "PRODUCTS_PROCESSED",
