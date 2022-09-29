@@ -15,13 +15,9 @@ os.environ['QA_PIM_APP_BASE_URL'] = "http://pimqa-apps.unbxd.io/pim/"
 os.environ['QA_PIM_BASE_URL'] = "http://pimqa.unbxd.io/"
 os.environ['QA_PEPPERX_URL'] = "https://pimqa.unbxd.io/pepperx/"
 
-os.environ['GCP_PIMQA_PIM_APP_BASE_URL'] = "http://gcp-pimqa-apps.unbxd.io/pim/"
-os.environ['GCP_PIMQA_PIM_BASE_URL'] = "http://gcp-pimqa.unbxd.io/"
-os.environ['GCP_PIMQA_PEPPERX_URL'] = "https://gcp-pimqa.unbxd.io/pepperx/"
-
-os.environ['GCP_PIMDEV_PIM_APP_BASE_URL'] = "http://gcp-pimdev-apps.unbxd.io/pim/"
-os.environ['GCP_PIMDEV_PIM_BASE_URL'] = "http://gcp-pimdev.unbxd.io/"
-os.environ['GCP_PIMDEV_PEPPERX_URL'] = "https://gcp-pimdev.unbxd.io/pepperx/"
+os.environ['PIMDEV_APP_BASE_URL'] = "http://pimdev-apps.unbxd.io/pim/"
+os.environ['PIMDEV_BASE_URL'] = "http://pimdev.unbxd.io/"
+os.environ['DEV_PEPPERX_URL'] = "https://pimdev.unbxd.io/pepperx/"
 
 EXPORT_STATUS = {"STARTED": "STARTED", "CHECK_IN_PROGRESS": "CHECK_IN_PROGRESS",
                  "EXPORT_IN_PROGRESS": "EXPORT_IN_PROGRESS", "PRODUCTS_PROCESSED": "PRODUCTS_PROCESSED",
@@ -37,10 +33,8 @@ def get_pim_app_domain():
         url = os.environ['PIM_APP_BASE_URL']
     elif env == "QA":
         url = os.environ['QA_PIM_APP_BASE_URL']
-    elif env == "GCP-PIMQA":
-        url = os.environ['GCP_PIMQA_PIM_APP_BASE_URL']
-    elif env == "GCP-PIMDEV":
-        url = os.environ['GCP_PIMDEV_PIM_APP_BASE_URL']
+    elif env == "PIMDEV":
+        url = os.environ['PIMDEV_APP_BASE_URL']
 
     # TODO: When upgrading to python 3.10.X use the below code
     # match env:
@@ -48,10 +42,8 @@ def get_pim_app_domain():
     #         url = os.environ['PIM_APP_BASE_URL']
     #     case "QA":
     #         url = os.environ['QA_PIM_APP_BASE_URL']
-    #     case "GCP-PIMQA":
-    #         url = os.environ['GCP_QA_PIM_APP_BASE_URL']
-    #     case "GCP-PIMDEV":
-    #         url = os.environ['GCP_DEV_PIM_APP_BASE_URL']
+    #     case "PIMDEV":
+    #         url = os.environ['PIMDEV_APP_BASE_URL']
 
     # url = os.environ['PIM_APP_BASE_URL'] if env == "PROD" else os.environ['QA_PIM_APP_BASE_URL']
 
@@ -66,10 +58,8 @@ def get_pim_domain():
         url = os.environ['PIM_BASE_URL']
     elif env == "QA":
         url = os.environ['QA_PIM_BASE_URL']
-    elif env == "GCP-PIMQA":
-        url = os.environ['GCP_PIMQA_PIM_BASE_URL']
-    elif env == "GCP-PIMDEV":
-        url = os.environ['GCP_PIMDEV_PIM_BASE_URL']
+    elif env == "PIMDEV":
+        url = os.environ['PIMDEV_BASE_URL']
 
     # TODO: When upgrading to python 3.10.X use the below code
     # match env:
@@ -77,10 +67,8 @@ def get_pim_domain():
     #         url = os.environ['PIM_APP_BASE_URL']
     #     case "QA":
     #         url = os.environ['QA_PIM_APP_BASE_URL']
-    #     case "GCP-PIMQA":
-    #         url = os.environ['GCP_QA_PIM_APP_BASE_URL']
-    #     case "GCP-PIMDEV":
-    #         url = os.environ['GCP_DEV_PIM_APP_BASE_URL']
+    #     case "PIMDEV":
+    #         url = os.environ['PIMDEV_BASE_URL']
 
     # url = os.environ['PIM_BASE_URL'] if env == "PROD" else os.environ['QA_PIM_BASE_URL']
     print(f" {env} ---- {url} ")
@@ -98,10 +86,8 @@ def get_pepperx_domain():
         url = os.environ['PEPPERX_URL']
     elif env == "QA":
         url = os.environ['QA_PEPPERX_URL']
-    elif env == "GCP-PIMQA":
-        url = os.environ['GCP_PIMQA_PEPPERX_URL']
-    elif env == "GCP-PIMDEV":
-        url = os.environ['GCP_PIMDEV_PEPPERX_URL']
+    elif env == "PIMDEV":
+        url = os.environ['PIMDEV_PEPPERX_URL']
 
     # TODO: When upgrading to python 3.10.X use the below code
     # match env:
@@ -109,10 +95,8 @@ def get_pepperx_domain():
     #         url = os.environ['PIM_APP_BASE_URL']
     #     case "QA":
     #         url = os.environ['QA_PIM_APP_BASE_URL']
-    #     case "GCP-PIMQA":
-    #         url = os.environ['GCP_QA_PIM_APP_BASE_URL']
-    #     case "GCP-PIMDEV":
-    #         url = os.environ['GCP_DEV_PIM_APP_BASE_URL']
+    #     case "PIMDEV":
+    #         url = os.environ['PIMDEV_PEPPERX_URL']
 
     # url = os.environ['PEPPERX_URL'] if env == "PROD" else os.environ['QA_PEPPERX_URL']
     print(f" {env} ---- {url} ")
