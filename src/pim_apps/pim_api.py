@@ -179,13 +179,15 @@ class PIMChannelAPI(object):
                 "Non 200 status thrown by PIM get product " + response.text + "==> Request Object >> " + str(req))
         return response.json()
 
-    def import_to_pim(self, file_url):
+    def import_to_pim(self, file_url, custom_reference_id=None):
 
         url = f"{get_pim_app_domain()}v1/imports"
 
+        reference_id = custom_reference_id or self.reference_id
+
         payload = json.dumps({
             "url": file_url,  # import_csv_url #import_json_url
-            "referenceId": self.reference_id
+            "referenceId": reference_id if reference_id != "-" and reference_id != "" else None
         })
         headers = {
             'Authorization': self.api_key,
@@ -294,7 +296,6 @@ class ProductProcessor(object):
 
     def insert_product_status(self, pid="", status="SUCCESS", status_desc=""):
 
-
         # if "SUCCESS" not in status:
         #     status_msg = status_desc
         # else:
@@ -343,9 +344,6 @@ class ProductProcessor(object):
             self.failed_count += 1
             self.insert_product_status(self, pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
 
-
-
-
     def fetch_all_pim_products(self):
         raw_products_list = []
         export_data = self.pim_channel_api.get_export_details()
@@ -354,10 +352,7 @@ class ProductProcessor(object):
         for product in self.pim_channel_api:
             raw_products_list.append(product)
 
-
         return raw_products_list
-
-
 
     def iterate_products(self, process_product, auto_finish=True, multiThread=True):
         self.processed_list = []
@@ -378,11 +373,9 @@ class ProductProcessor(object):
                 # if total_products < 25000:
                 print(f"Received {total_products} products for the job processing")
 
-
                 if multiThread:
                     with concurrent.futures.ThreadPoolExecutor() as executor:
                         for product in raw_products_list:
-
                             executor.submit(self.process_pim_product, product, process_product)
                 else:
                     for product in raw_products_list:
@@ -393,23 +386,23 @@ class ProductProcessor(object):
             # for product in self.pim_channel_api:
             #     self.product_counter += 1
             #     self.process_pim_product(product, process_product)
-                # try:
-                #     if product is not None:
-                #         pid = product.get("id") or random.randint(100, 9999)
-                #         # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
-                #         proccessed_product, status = process_product(product, self.product_counter)
-                #         if status == "SUCCESS":
-                #             self.success_count += 1
-                #         elif status == "FAILED":
-                #             self.failed_count += 1
-                #         self.processed_list.append(proccessed_product)
-                #         if self.product_counter % 5 == 0:
-                #             self.update_export_status(status="EXPORT_IN_PROGRESS", success_count=self.success_count, failed_count=self.failed_count)
-                #
-                # except Exception as e:
-                #     print_exc()
-                #     error_pid = pid or f"export_pid_{counter}"
-                #     self.insert_product_status(self, pid=error_pid , status="FAILED", status_desc=f"{str(e)}")
+            # try:
+            #     if product is not None:
+            #         pid = product.get("id") or random.randint(100, 9999)
+            #         # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
+            #         proccessed_product, status = process_product(product, self.product_counter)
+            #         if status == "SUCCESS":
+            #             self.success_count += 1
+            #         elif status == "FAILED":
+            #             self.failed_count += 1
+            #         self.processed_list.append(proccessed_product)
+            #         if self.product_counter % 5 == 0:
+            #             self.update_export_status(status="EXPORT_IN_PROGRESS", success_count=self.success_count, failed_count=self.failed_count)
+            #
+            # except Exception as e:
+            #     print_exc()
+            #     error_pid = pid or f"export_pid_{counter}"
+            #     self.insert_product_status(self, pid=error_pid , status="FAILED", status_desc=f"{str(e)}")
 
             if auto_finish:
                 self.update_export_status(status="EXPORTED", success_count=self.success_count,
@@ -493,7 +486,8 @@ class ProductProcessor(object):
                 data["export_stats"]["failed"] = failed_count
         self.pim_channel_api.update_export_status(data)
 
-    def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="Template_Export.csv", add_parent_rows = False):
+    def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="Template_Export.csv",
+                                add_parent_rows=False):
         counter = 1
         # transformer = Transformer(product_schema)
         tsv_products = list()
@@ -503,7 +497,8 @@ class ProductProcessor(object):
 
         try:
             if add_parent_rows:
-                self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True, slice_id=None)
+                self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True,
+                                                     slice_id=None)
                 for product in self.pim_channel_api:
                     # product = transformer.transform(product)
                     try:
@@ -517,7 +512,8 @@ class ProductProcessor(object):
                             tsv_product.append(data)
                         # print(tsv_product)
                         tsv_products.append(tsv_product)
-                        pid = product.get("pimUniqueId") or product.get("id") or product.get("sku") or random.randint(100, 9999)
+                        pid = product.get("pimUniqueId") or product.get("id") or product.get("sku") or random.randint(
+                            100, 9999)
                         self.insert_product_status(pid, "STARTED", f"Product processing started for {pid}")
                         counter = counter + 1
                         success_count = success_count + 1
@@ -541,7 +537,8 @@ class ProductProcessor(object):
                         tsv_product.append(data)
                     # print(tsv_product)
                     tsv_products.append(tsv_product)
-                    pid = product.get("pimUniqueId") or product.get("id") or product.get("sku") or random.randint(100, 9999)
+                    pid = product.get("pimUniqueId") or product.get("id") or product.get("sku") or random.randint(100,
+                                                                                                                  9999)
                     self.insert_product_status(pid, "STARTED", f"Product processing started for {pid}")
                     counter = counter + 1
                     success_count = success_count + 1
@@ -550,7 +547,6 @@ class ProductProcessor(object):
                     print(e)
                     print_exc()
                     failed_count = failed_count + 1
-
 
             if header:
                 tsv_products.insert(0, properties_schema)
