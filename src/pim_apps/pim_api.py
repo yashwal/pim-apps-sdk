@@ -313,9 +313,9 @@ class ProductProcessor(object):
             print_exc()
             print(e)
 
-    def get_sorted_products_list(self):
+    def get_sorted_products_list(self, include_variants=False):
         print("Sorted Product List")
-        all_products = self.fetch_all_pim_products()
+        all_products = self.fetch_all_pim_products(include_variants)
         sorted_product = sorted(all_products, key=lambda d: d['pimUniqueId'])
         return sorted_product
 
@@ -344,14 +344,18 @@ class ProductProcessor(object):
             self.failed_count += 1
             self.insert_product_status(self, pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
 
-    def fetch_all_pim_products(self):
+    def fetch_all_pim_products(self, include_variants=False):
         raw_products_list = []
         export_data = self.pim_channel_api.get_export_details()
         # export_details = export_data["data"]["metaInfo"]["export"]
 
         for product in self.pim_channel_api:
             raw_products_list.append(product)
-
+            if include_variants and product["pimProductType"] == "PARENT":
+                pim_variants_fetcher = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False,
+                                                     parent_id=product["pimUniqueId"])
+                for v_product in pim_variants_fetcher:
+                    raw_products_list.append(v_product)
         return raw_products_list
 
     def iterate_products(self, process_product, auto_finish=True, multiThread=True):
@@ -441,19 +445,19 @@ class ProductProcessor(object):
     def get_processed_products(self):
         return self.processed_list
 
-    def send_to_pim(self, auto_export=False, file_url="", products_list=[], file_name="App_Results_"):
+    def send_to_pim(self, auto_export=False, file_url="", products_list=[], file_name="App_Results_", custom_reference_id=None):
         if file_url:
             print("use file url and send to pim")
-            self.pim_channel_api.import_to_pim(file_url)
+            self.pim_channel_api.import_to_pim(file_url, custom_reference_id)
             print(file_url)
         elif products_list and isinstance(products_list, list) and len(products_list) > 0:
             print("convert list of dict to JSON or CSV and")
             file_url = self.pim_channel_api.upload_csv(products_list, file_name)
-            self.pim_channel_api.import_to_pim(file_url)
+            self.pim_channel_api.import_to_pim(file_url, custom_reference_id)
             print(file_url)
         elif auto_export == True:
             file_url = self.pim_channel_api.upload_csv(self.processed_list, "sample_app_response_")
-            self.pim_channel_api.import_to_pim(file_url)
+            self.pim_channel_api.import_to_pim(file_url, custom_reference_id)
             print(file_url)
 
     def upload_to_s3(self, file_path):
