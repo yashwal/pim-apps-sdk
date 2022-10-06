@@ -445,19 +445,19 @@ class ProductProcessor(object):
     def get_processed_products(self):
         return self.processed_list
 
-    def send_to_pim(self, auto_export=False, file_url="", products_list=[], file_name="App_Results_"):
+    def send_to_pim(self, auto_export=False, file_url="", products_list=[], file_name="App_Results_", custom_reference_id=None):
         if file_url:
             print("use file url and send to pim")
-            self.pim_channel_api.import_to_pim(file_url)
+            self.pim_channel_api.import_to_pim(file_url, custom_reference_id)
             print(file_url)
         elif products_list and isinstance(products_list, list) and len(products_list) > 0:
             print("convert list of dict to JSON or CSV and")
             file_url = self.pim_channel_api.upload_csv(products_list, file_name)
-            self.pim_channel_api.import_to_pim(file_url)
+            self.pim_channel_api.import_to_pim(file_url, custom_reference_id)
             print(file_url)
         elif auto_export == True:
             file_url = self.pim_channel_api.upload_csv(self.processed_list, "sample_app_response_")
-            self.pim_channel_api.import_to_pim(file_url)
+            self.pim_channel_api.import_to_pim(file_url, custom_reference_id)
             print(file_url)
 
     def upload_to_s3(self, file_path):
