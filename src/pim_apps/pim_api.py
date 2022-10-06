@@ -2,16 +2,12 @@ import concurrent
 from traceback import print_exc
 import json
 import os
-from datetime import datetime
 import time
 from time import time as time_time, sleep
 import pandas as pd
-import math
 import requests
-import random
 from .utils import get_pepperx_domain, get_pim_domain, get_pim_app_domain, get_a2c_domain, write_csv_file
 from .pepperx_db import ProductStatus, App, AppUser, AppUserPIM
-from urllib.request import urlretrieve
 import boto3
 import random
 from botocore.exceptions import ClientError
