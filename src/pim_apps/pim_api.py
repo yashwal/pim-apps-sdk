@@ -313,9 +313,9 @@ class ProductProcessor(object):
             print_exc()
             print(e)
 
-    def get_sorted_products_list(self):
+    def get_sorted_products_list(self, include_variants=False):
         print("Sorted Product List")
-        all_products = self.fetch_all_pim_products()
+        all_products = self.fetch_all_pim_products(include_variants)
         sorted_product = sorted(all_products, key=lambda d: d['pimUniqueId'])
         return sorted_product
 
@@ -344,14 +344,18 @@ class ProductProcessor(object):
             self.failed_count += 1
             self.insert_product_status(self, pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
 
-    def fetch_all_pim_products(self):
+    def fetch_all_pim_products(self, include_variants=False):
         raw_products_list = []
         export_data = self.pim_channel_api.get_export_details()
         # export_details = export_data["data"]["metaInfo"]["export"]
 
         for product in self.pim_channel_api:
             raw_products_list.append(product)
-
+            if include_variants and product["pimProductType"] == "PARENT":
+                pim_variants_fetcher = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False,
+                                                     parent_id=product["pimUniqueId"])
+                for v_product in pim_variants_fetcher:
+                    raw_products_list.append(v_product)
         return raw_products_list
 
     def iterate_products(self, process_product, auto_finish=True, multiThread=True):
