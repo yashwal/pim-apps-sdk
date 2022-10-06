@@ -122,6 +122,64 @@ def write_csv_file(data, delimiter="\t", filename="IndexedExport.csv"):
     return filename
 
 
+def flatten(d, sep="_"):
+    import collections
+
+    obj = collections.OrderedDict()
+
+    def recurse(t, parent_key=""):
+
+        if isinstance(t, list):
+            for i in range(len(t)):
+                recurse(t[i], parent_key + sep + str(i) if parent_key else str(i))
+        elif isinstance(t, dict):
+            for k, v in t.items():
+                recurse(v, parent_key + sep + k if parent_key else k)
+        else:
+            obj[parent_key] = t
+
+    recurse(d)
+
+    return obj
+
+
+def unflatten(dictionary, sep="_"):
+    result_dict = dict()
+    for flatten_key, value in dictionary.items():
+        unflatten_key_list = flatten_key.split(sep)
+        tmp = result_dict
+        for index, unflatten_key in enumerate(unflatten_key_list[:-1]):
+            if unflatten_key in tmp:
+                pass
+            elif unflatten_key.isnumeric() and isinstance(tmp, list):
+                unflatten_key = int(unflatten_key)
+                if len(tmp) == unflatten_key:
+                    tmp.append({})
+            else:
+                if index + 1 < len(unflatten_key_list) and \
+                        unflatten_key_list[index + 1].isnumeric():
+                    tmp[unflatten_key] = []
+                    if len(unflatten_key_list) < index + 2:
+                        if unflatten_key_list[index + 2].isnumeric():
+                            tmp[unflatten_key].append(None)
+                        else:
+                            tmp[unflatten_key].append({})
+                    else:
+                        tmp[unflatten_key].append({})
+                elif unflatten_key.isnumeric():
+                    unflatten_key = int(unflatten_key)
+                else:
+                    tmp[unflatten_key] = {}
+            tmp = tmp[unflatten_key]
+        last_key = unflatten_key_list[-1]
+        if unflatten_key_list[-1].isnumeric():
+            last_key = int(unflatten_key_list[-1])
+            if len(tmp) == last_key and isinstance(tmp, list):
+                tmp.append(None)
+        tmp[last_key] = value
+    return result_dict
+
+
 class FileParser(object):
     def load(self, url):
         self.url = url
