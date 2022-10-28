@@ -500,7 +500,7 @@ class ProductProcessor(object):
             # if add_parent_rows:
                 # self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True,
                 #                                      slice_id=None)
-            all_products_with_variants = self.get_sorted_products_list(include_variants=True)
+            all_products_with_variants = self.fetch_all_pim_products(include_variants=True)
             for product in all_products_with_variants:
                 # product = transformer.transform(product)
                 try:
