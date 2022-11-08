@@ -277,6 +277,20 @@ class PIMChannelAPI(object):
         # csv_url = file_name
         csv_url = self.upload_to_s3(file_name)
         return csv_url
+    
+    def get_import_details(self):
+
+        url = f"{get_pim_app_domain()}v1/appTriggerInfo?referenceId={self.reference_id}"
+
+        payload = {}
+        headers = {
+            'Authorization': f'{self.api_key}'
+        }
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        return json.loads(response.text)
+
 
 
 class ProductProcessor(object):
