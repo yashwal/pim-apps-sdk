@@ -277,6 +277,20 @@ class PIMChannelAPI(object):
         # csv_url = file_name
         csv_url = self.upload_to_s3(file_name)
         return csv_url
+    
+    def get_import_details(self):
+
+        url = f"{get_pim_app_domain()}v1/appTriggerInfo?referenceId={self.reference_id}"
+
+        payload = {}
+        headers = {
+            'Authorization': f'{self.api_key}'
+        }
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        return json.loads(response.text)
+
 
 
 class ProductProcessor(object):
@@ -364,6 +378,9 @@ class ProductProcessor(object):
             counter = 1
             status = True
             total_products = self.pim_channel_api.get()['data'].get('total', 0)
+            if not total_products:
+                self.pim_channel_api.group_by_parent = False
+                total_products = self.pim_channel_api.get()['data'].get('total', 0)
             if total_products > 0:
                 raw_products_list = self.fetch_all_pim_products(include_variants)
             else:

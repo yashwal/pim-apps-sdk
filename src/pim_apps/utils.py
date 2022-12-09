@@ -121,6 +121,61 @@ def write_csv_file(data, delimiter="\t", filename="IndexedExport.csv"):
         csvwriter.writerows(data)
     return filename
 
+  
+# @title Enter CSV file name to be generated for the API response and run the cells
+def generate_csv(data, file_name="API_data_fetch", zipped=False, index=False):
+    named_tuple = time.localtime()  # get struct_time
+    time_string = time.strftime("-%m-%d-%y-%H-%M", named_tuple)
+    df = pd.DataFrame(data)
+    file_name = f'{file_name}{time_string}.csv'
+
+    if zipped:
+        compression_opts = dict(method='zip',
+                                archive_name=f'{file_name}')
+        final_local_url = f'{file_name.split(".")[0]}.zip'
+        df.to_csv(final_local_url, index=index,
+                  compression=compression_opts)
+    else:
+        final_local_url = file_name
+        df.to_csv(final_local_url, index=index)
+    return final_local_url
+
+def upload_to_s3(filename):
+    """Upload a file to an S3 bucket
+    :param file_name: File to upload
+    :param bucket: Bucket to upload to
+    :param object_name: S3 object name. If not specified then file_name is used
+    :return: True if file was uploaded, else False
+    """
+    bucket = "unbxd-pim-ui"
+    region = os.environ['aws_region']
+    aws_access_key_id = os.environ['aws_access_key_id']
+    aws_secret_access_key = os.environ['aws_secret_access_key']
+    key = "app-uploads/" + filename
+    object_name = filename
+    s3 = boto3.resource(
+        service_name='s3',
+        region_name=region,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key
+    )
+    try:
+        s3.Bucket(bucket).upload_file(Filename=filename, Key=key)
+        url = f"https://{bucket}.s3.{region}.amazonaws.com/{key}"
+    except ClientError as e:
+        # logging.error(e)
+        print_exc()
+        print(e)
+        return False
+
+    print(url)
+    return url
+
+def upload_csv(req_data, input_file_name):
+    file_name = generate_csv(req_data, input_file_name, True)
+    # csv_url = file_name
+    csv_url = upload_to_s3(file_name)
+    return csv_url
 
 def flatten(d, sep="_"):
     import collections
