@@ -378,6 +378,9 @@ class ProductProcessor(object):
             counter = 1
             status = True
             total_products = self.pim_channel_api.get()['data'].get('total', 0)
+            if not total_products:
+                self.pim_channel_api.group_by_parent = False
+                total_products = self.pim_channel_api.get()['data'].get('total', 0)
             if total_products > 0:
                 raw_products_list = self.fetch_all_pim_products(include_variants)
             else:
