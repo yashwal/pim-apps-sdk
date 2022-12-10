@@ -382,6 +382,7 @@ class ProductProcessor(object):
                 self.pim_channel_api.group_by_parent = False
                 total_products = self.pim_channel_api.get()['data'].get('total', 0)
             if total_products > 0:
+                self.pim_channel_api.products_total = total_products
                 raw_products_list = self.fetch_all_pim_products(include_variants)
             else:
                 status = False
