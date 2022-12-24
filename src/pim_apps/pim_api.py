@@ -361,7 +361,7 @@ class ProductProcessor(object):
 
         for product in self.pim_channel_api:
             raw_products_list.append(product)
-            if include_variants and product["pimProductType"] == "PARENT":
+            if include_variants and product.get("pimProductType","") == "PARENT":
                 pim_variants_fetcher = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False,
                                                      parent_id=product["pimUniqueId"])
                 for v_product in pim_variants_fetcher:
