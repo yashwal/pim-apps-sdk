@@ -325,8 +325,10 @@ class ProductProcessor(object):
 
     def get_sorted_products_list(self, include_variants=False):
         print("Sorted Product List")
+        sorted_product = []
         all_products = self.fetch_all_pim_products(include_variants)
-        sorted_product = sorted(all_products, key=lambda d: d['pimUniqueId'])
+        if all_products and isinstance(all_products,list):
+            sorted_product = sorted(all_products, key=lambda d: d['pimUniqueId'])
         return sorted_product
 
     # 1. Pulls products and variants from PIM
