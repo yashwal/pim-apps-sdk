@@ -362,12 +362,20 @@ class ProductProcessor(object):
         # export_details = export_data["data"]["metaInfo"]["export"]
 
         for product in self.pim_channel_api:
-            raw_products_list.append(product)
+            if isinstance(product, dict):
+                raw_products_list.append(product)
             if include_variants and product and product.get("pimProductType","") == "PARENT" and product.get("pimUniqueId"):
                 pim_variants_fetcher = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False,
                                                      parent_id=product.get("pimUniqueId",""))
                 for v_product in pim_variants_fetcher:
-                    raw_products_list.append(v_product)
+                    if isinstance(product, dict):
+                        raw_products_list.append(v_product)
+
+        if include_variants and len(raw_products_list) == 0:
+            self.pim_channel_api.group_by_parent = False
+            for product in self.pim_channel_api:
+                if isinstance(product, dict):
+                    raw_products_list.append(product)
         return raw_products_list
 
     def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False):
