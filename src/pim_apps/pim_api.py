@@ -328,7 +328,7 @@ class ProductProcessor(object):
         sorted_product = []
         all_products = self.fetch_all_pim_products(include_variants)
         if all_products and isinstance(all_products,list):
-            sorted_product = sorted(all_products, key=lambda d: d['pimUniqueId'])
+            sorted_product = sorted(all_products, key=lambda d: d.get('pimUniqueId',''))
         return sorted_product
 
     # 1. Pulls products and variants from PIM
@@ -363,9 +363,9 @@ class ProductProcessor(object):
 
         for product in self.pim_channel_api:
             raw_products_list.append(product)
-            if include_variants and product and product.get("pimProductType","") == "PARENT":
+            if include_variants and product and product.get("pimProductType","") == "PARENT" and product.get("pimUniqueId"):
                 pim_variants_fetcher = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False,
-                                                     parent_id=product.get("pimUniqueId"))
+                                                     parent_id=product.get("pimUniqueId",""))
                 for v_product in pim_variants_fetcher:
                     raw_products_list.append(v_product)
         return raw_products_list
