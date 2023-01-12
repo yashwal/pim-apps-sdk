@@ -4,6 +4,7 @@ import tempfile
 import zipfile
 import requests
 import pandas as pd
+import boto3
 
 os.environ['A2C_BASE_URL'] = "https://api.api2cart.com/"
 
@@ -148,9 +149,9 @@ def upload_to_s3(filename):
     :return: True if file was uploaded, else False
     """
     bucket = "unbxd-pim-ui"
-    region = os.environ['aws_region']
-    aws_access_key_id = os.environ['aws_access_key_id']
-    aws_secret_access_key = os.environ['aws_secret_access_key']
+    region = os.environ['aws_region'] or os.environ[f"{str('aws_region').upper()}"]
+    aws_access_key_id = os.environ['aws_access_key_id'] or os.environ[f"{str('aws_access_key_id').upper()}"]
+    aws_secret_access_key = os.environ['aws_secret_access_key'] or os.environ[f"{str('aws_secret_access_key').upper()}"]
     key = "app-uploads/" + filename
     object_name = filename
     s3 = boto3.resource(
