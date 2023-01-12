@@ -149,9 +149,9 @@ def upload_to_s3(filename):
     :return: True if file was uploaded, else False
     """
     bucket = "unbxd-pim-ui"
-    region = os.environ['aws_region'] or os.environ[f"{str('aws_region').upper()}"]
-    aws_access_key_id = os.environ['aws_access_key_id'] or os.environ[f"{str('aws_access_key_id').upper()}"]
-    aws_secret_access_key = os.environ['aws_secret_access_key'] or os.environ[f"{str('aws_secret_access_key').upper()}"]
+    region = os.environ.get('aws_region') or os.environ.get(f"{str('aws_region').upper()}")
+    aws_access_key_id = os.environ.get('aws_access_key_id') or os.environ.get(f"{str('aws_access_key_id').upper()}")
+    aws_secret_access_key = os.environ.get('aws_secret_access_key') or os.environ.get(f"{str('aws_secret_access_key').upper()}")
     key = "app-uploads/" + filename
     object_name = filename
     s3 = boto3.resource(
