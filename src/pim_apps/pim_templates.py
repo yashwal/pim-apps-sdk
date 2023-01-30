@@ -413,6 +413,8 @@ class ReaperAdapterUtils:
                 reaper_utils.patch_mappings(adapter_id, mapped_adapter_properties)
                 print("$$$$$ Done updating mapping of the adapter with PIM properties based on PSN & match")
                 status = "SUCCESS"
+            else:
+                status = "SUCCESS"
         except Exception as e:
             print(e)
             status = "FAILED"
