@@ -378,7 +378,7 @@ class ProductProcessor(object):
                     raw_products_list.append(product)
         return raw_products_list
 
-    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False):
+    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True):
         self.processed_list = []
         self.product_counter = 0
         self.success_count = 0
@@ -432,12 +432,18 @@ class ProductProcessor(object):
             #     error_pid = pid or f"export_pid_{counter}"
             #     self.insert_product_status(self, pid=error_pid , status="FAILED", status_desc=f"{str(e)}")
 
-            if auto_finish:
-                self.update_export_status(status="EXPORTED", success_count=self.success_count,
-                                          failed_count=self.failed_count)
+
+            if update_product_count:
+
+                if auto_finish:
+                    self.update_export_status(status="EXPORTED", success_count=self.success_count,
+                                              failed_count=self.failed_count)
+                else:
+                    self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
+                                              failed_count=self.failed_count)
             else:
-                self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
-                                          failed_count=self.failed_count)
+                self.update_export_status(status="PRODUCTS_PROCESSED")
+
             # else:
             #     print("Perform multi threading")
             #     maxSliceCount = 5
