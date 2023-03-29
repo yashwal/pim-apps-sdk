@@ -224,7 +224,7 @@ class PIMChannelAPI(object):
         return json.loads(response.text)
 
     # @title Enter CSV file name to be generated for the API response and run the cells
-    def generate_csv(self, data, file_name="API_data_fetch", zipped=False, index=False):
+    def generate_csv(self, data, file_name="API_data_fetch", zipped=False, index=False, separator=","):
         named_tuple = time.localtime()  # get struct_time
         time_string = time.strftime("-%m-%d-%y-%H-%M", named_tuple)
         df = pd.DataFrame(data)
@@ -235,10 +235,10 @@ class PIMChannelAPI(object):
                                     archive_name=f'{file_name}')
             final_local_url = f'{file_name.split(".")[0]}.zip'
             df.to_csv(final_local_url, index=index,
-                      compression=compression_opts)
+                      compression=compression_opts, sep=separator)
         else:
             final_local_url = file_name
-            df.to_csv(final_local_url, index=index)
+            df.to_csv(final_local_url, index=index, sep=separator)
         return final_local_url
 
     def upload_to_s3(self, filename):
@@ -272,8 +272,8 @@ class PIMChannelAPI(object):
         print(url)
         return url
 
-    def upload_csv(self, req_data, input_file_name):
-        file_name = self.generate_csv(req_data, input_file_name, True)
+    def upload_csv(self, req_data, input_file_name, separator="", zipped=True):
+        file_name = self.generate_csv(req_data, input_file_name, zipped, separator=separator)
         # csv_url = file_name
         csv_url = self.upload_to_s3(file_name)
         return csv_url
@@ -378,7 +378,7 @@ class ProductProcessor(object):
                     raw_products_list.append(product)
         return raw_products_list
 
-    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False):
+    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True):
         self.processed_list = []
         self.product_counter = 0
         self.success_count = 0
@@ -397,6 +397,12 @@ class ProductProcessor(object):
             else:
                 status = False
 
+            # with open('./raw_products.json', 'w') as f:
+            #     f.write(json.dumps(raw_products_list))
+
+            # with open('./raw_products.json', 'r') as f:
+            #     raw_products_list = f.read()
+            # raw_products_list = json.loads(raw_products_list)
             if status:
                 # if total_products < 25000:
                 print(f"Received {total_products} products for the job processing")
@@ -432,12 +438,18 @@ class ProductProcessor(object):
             #     error_pid = pid or f"export_pid_{counter}"
             #     self.insert_product_status(self, pid=error_pid , status="FAILED", status_desc=f"{str(e)}")
 
-            if auto_finish:
-                self.update_export_status(status="EXPORTED", success_count=self.success_count,
-                                          failed_count=self.failed_count)
+
+            if update_product_count:
+
+                if auto_finish:
+                    self.update_export_status(status="EXPORTED", success_count=self.success_count,
+                                              failed_count=self.failed_count)
+                else:
+                    self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
+                                              failed_count=self.failed_count)
             else:
-                self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
-                                          failed_count=self.failed_count)
+                self.update_export_status(status="PRODUCTS_PROCESSED")
+
             # else:
             #     print("Perform multi threading")
             #     maxSliceCount = 5
@@ -497,9 +509,15 @@ class ProductProcessor(object):
             "status": str(status).upper().strip()
         }
         if success_file:
-            data["file_download_links"] = {
-                "CSV": success_file
-            }
+            data["file_download_links"] = {}
+            if isinstance(success_file, list):
+                for file in success_file:
+                    extension = file.split(".")[-1].upper()
+                    data["file_download_links"][extension] = file
+            else:
+                data["file_download_links"] = {
+                    "CSV": success_file
+                }
         if failed_file:
             data["failed_file_download_links"] = {
                 "CSV": failed_file
