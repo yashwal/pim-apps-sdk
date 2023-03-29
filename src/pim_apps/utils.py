@@ -117,7 +117,7 @@ def download_url(url, file_name=""):
 
 
 def write_csv_file(data, delimiter="\t", filename="IndexedExport.csv"):
-    with open(filename, 'w') as csvfile:
+    with open(filename, 'w', encoding='utf-8') as csvfile:
         csvwriter = csv.writer(csvfile, delimiter=delimiter)
         csvwriter.writerows(data)
     return filename
