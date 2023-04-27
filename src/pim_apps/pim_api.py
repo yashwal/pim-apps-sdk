@@ -371,7 +371,7 @@ class ProductProcessor(object):
                     if isinstance(product, dict):
                         raw_products_list.append(v_product)
 
-        if include_variants and len(raw_products_list) <= 10:
+        if include_variants:
             self.pim_channel_api.group_by_parent = False
             for product in self.pim_channel_api:
                 if isinstance(product, dict):
