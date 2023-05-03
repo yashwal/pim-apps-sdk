@@ -580,7 +580,7 @@ class ProductProcessor(object):
             self.pim_channel_api.import_to_pim(file_url, custom_reference_id)
             print(file_url)
         elif auto_export == True:
-            file_url = self.pim_channel_api.upload_csv(self.processed_list, "sample_app_response_")
+            file_url = self.pim_channel_api.upload_csv(self.processed_list, file_name)
             self.pim_channel_api.import_to_pim(file_url, custom_reference_id)
             print(file_url)
 
