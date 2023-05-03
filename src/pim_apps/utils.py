@@ -210,6 +210,12 @@ def flatten(d, sep="_"):
 
     return obj
 
+def remove_duplicates_from_list(list_of_dicts):
+    unique_ids = set(item['pimUniqueId'] for item in list_of_dicts)
+
+    # Use a list comprehension to create a new list with only the unique items
+    new_list_of_dicts = [item for item in list_of_dicts if item['pimUniqueId'] in unique_ids]
+    return new_list_of_dicts
 
 def unflatten(dictionary, sep="_"):
     result_dict = dict()
