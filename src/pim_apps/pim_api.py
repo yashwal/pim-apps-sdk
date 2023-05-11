@@ -6,7 +6,7 @@ import time
 from time import time as time_time, sleep
 import pandas as pd
 import requests
-from .utils import get_pepperx_domain, get_pim_domain, get_pim_app_domain, get_a2c_domain, write_csv_file
+from .utils import get_pepperx_domain, get_pim_domain, get_pim_app_domain, get_a2c_domain, write_csv_file,remove_duplicates_from_list
 from .pepperx_db import ProductStatus, App, AppUser, AppUserPIM
 import boto3
 import random
@@ -25,6 +25,7 @@ class PIMChannelAPI(object):
         self.q = q
         self.cache_count = cache_count
         self.cache = []
+        self.error_cache = {}
         self.reference_id = reference_id
         self.parent_id = parent_id
         self.slice_id = slice_id
@@ -32,6 +33,7 @@ class PIMChannelAPI(object):
         self.scroll_id = None
         self.products_total = 0
         self.is_products_split = self.is_products_post_split()
+
 
     def count(self):
         response = self.get(count=20)
@@ -72,10 +74,15 @@ class PIMChannelAPI(object):
                     products = response["data"]["products"]
                     self.scroll_id = response["data"]["scrollId"]
                     self.max = response["data"]["total"]
+                    self.error_cache = response.get("productErrors",{})
                     self.cache = products
                 self.n += 1
-                if len(self.cache) > index:
-                    return self.cache[index]
+                if len(self.cache) > index or len(self.cache)==0:
+                    if len(self.cache)>0:
+                        return self.extract_product_errors(self.cache[index])
+                    else:
+                        return self.extract_product_errors([])
+                    # return self.cache[index]
             else:
                 raise StopIteration
         else:
@@ -90,12 +97,33 @@ class PIMChannelAPI(object):
                     self.scroll_id = response["data"]["scrollId"]
                     self.max = response["data"]["total"]
                     self.iter_max = response["data"]["count"]
+                    self.error_cache = response.get("productErrors", {})
                     self.cache = products
                 self.n += 1
-                if len(self.cache) > index:
-                    return self.cache[index]
+                if len(self.cache) > 0 or len(self.cache)==0:
+                    return self.extract_product_errors(self.cache[index])
+                else:
+                    return self.extract_product_errors([])
+                    # return self.cache[index]
             else:
                 raise StopIteration
+
+    def extract_product_errors(self, product):
+        if len(product)>0:
+            pim_unique_id = product.get("pimUniqueId","")
+            if pim_unique_id in list(self.error_cache.keys()):
+                self.error_cache[pim_unique_id] = list(map(lambda x:x.replace("|:|","-"),self.error_cache[pim_unique_id]))
+                return (product,self.error_cache[pim_unique_id])
+            else:
+                return (product, [])
+        else:
+            final_error_list = []
+            if len(self.error_cache.keys()):
+                for key, value in self.error_cache.items():
+                    value = list(map(lambda x:x.replace("|:|","-"),value))
+                    final_error_list.append(f"{key}:{value}")
+            return [],final_error_list
+
 
     def is_retryable(self, count, page, type, scroll_id, retry_count, message):
         retry_count = retry_count - 1
@@ -235,10 +263,10 @@ class PIMChannelAPI(object):
                                     archive_name=f'{file_name}')
             final_local_url = f'{file_name.split(".")[0]}.zip'
             df.to_csv(final_local_url, index=index,
-                      compression=compression_opts, sep=separator)
+                      compression=compression_opts, sep=str(separator))
         else:
             final_local_url = file_name
-            df.to_csv(final_local_url, index=index, sep=separator)
+            df.to_csv(final_local_url, index=index, sep=str(separator))
         return final_local_url
 
     def upload_to_s3(self, filename):
@@ -300,9 +328,16 @@ class ProductProcessor(object):
         self.task_id = task_id
         self.reference_id = reference_id
         self.app_user_instance = AppUserPIM(self.api_key)
-        self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True)
+
+
+        self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id)
+        export_data = self.pim_channel_api.get_export_details()
+        export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
+        group_by_parent = export_details.get('product_listing_type', False)
+        self.pim_channel_api.group_by_parent = True if group_by_parent == "GROUP_BY_PARENT" else False
         # self.raw_products_list = []
         self.product_status_instance = ProductStatus(self.task_id)
+
 
     def insert_product_status(self, pid="", status="SUCCESS", status_desc=""):
 
@@ -326,7 +361,7 @@ class ProductProcessor(object):
     def get_sorted_products_list(self, include_variants=False):
         print("Sorted Product List")
         sorted_product = []
-        all_products = self.fetch_all_pim_products(include_variants)
+        all_products, failed_products = self.fetch_all_pim_products(include_variants)
         if all_products and isinstance(all_products,list):
             sorted_product = sorted(all_products, key=lambda d: d.get('pimUniqueId',''))
         return sorted_product
@@ -344,6 +379,7 @@ class ProductProcessor(object):
                 if status == "SUCCESS":
                     self.success_count += 1
                 elif status == "FAILED":
+                    self.failed_processed_products.append(proccessed_product)
                     self.failed_count += 1
                 self.processed_list.append(proccessed_product)
                 if self.product_counter % 5 == 0:
@@ -354,32 +390,74 @@ class ProductProcessor(object):
             print_exc()
             error_pid = pid or f"export_pid_{str(time.time())}"
             self.failed_count += 1
-            self.insert_product_status(self, pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
+            self.insert_product_status(pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
 
     def fetch_all_pim_products(self, include_variants=False):
         raw_products_list = []
+        failed_product_list = []
         export_data = self.pim_channel_api.get_export_details()
-        # export_details = export_data["data"]["metaInfo"]["export"]
+        export_details = export_data.get("data",{}).get("metaInfo",{}).get("export",{})
+        export_with_readiness = export_details.get("check_readiness", False)
 
-        for product in self.pim_channel_api:
+        for product, error in self.pim_channel_api:
             if isinstance(product, dict):
-                raw_products_list.append(product)
-            if include_variants and product and product.get("pimProductType","") == "PARENT" and product.get("pimUniqueId"):
-                pim_variants_fetcher = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False,
-                                                     parent_id=product.get("pimUniqueId",""))
-                for v_product in pim_variants_fetcher:
-                    if isinstance(product, dict):
-                        raw_products_list.append(v_product)
-
-        if include_variants:
-            self.pim_channel_api.group_by_parent = False
-            for product in self.pim_channel_api:
-                if isinstance(product, dict):
+                if export_with_readiness:
+                    errorList = product.get("errorList", [])
+                    errorList = [errorList] if isinstance(errorList, str) else errorList
+                    if len(error)>0 or len(errorList)>0:
+                        error += errorList
+                        self.insert_product_status(pid=product.get("pimUniqueId","pid"), status="FAILED", status_desc="|".join(error))
+                        product["errors"] = "|".join(error)
+                        failed_product_list.append(product)
+                    else:
+                        raw_products_list.append(product)
+                else:
                     raw_products_list.append(product)
-        return raw_products_list
+                if include_variants and product and product.get("pimProductType","") == "PARENT" and product.get("pimUniqueId"):
+                    pim_variants_fetcher = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False,
+                                                         parent_id=product.get("pimUniqueId",""))
+                    for v_product, v_error in pim_variants_fetcher:
+                        if isinstance(product, dict):
+                            if export_with_readiness:
+                                v_errorList = v_product.get("errorList", [])
+                                v_errorList = [v_errorList] if isinstance(v_errorList, str) else v_errorList
+                                if len(v_error) > 0 or len(v_errorList) > 0:
+                                    v_error += v_errorList
+                                    self.insert_product_status(pid=product.get("pimUniqueId", "pid"), status="FAILED",
+                                                               status_desc="|".join(v_error))
+                                    product["errors"] = "|".join(v_error)
+                                    failed_product_list.append(product)
+                                else:
+                                    raw_products_list.append(product)
 
-    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True):
+                            else:
+                                raw_products_list.append(v_product)
+
+        # TODO len(raw_products_list) == 0 is removed in the below line for etsy Solving Alpha
+        # if include_variants and not self.pim_channel_api.group_by_parent:
+        #     for product, error in self.pim_channel_api:
+        #         if isinstance(product, dict):
+        #             if export_with_readiness:
+        #                 errorList = product.get("errorList", [])
+        #                 errorList = [errorList] if isinstance(errorList, str) else errorList
+        #                 if len(error) > 0 or len(errorList) > 0:
+        #                     error += errorList
+        #                     self.insert_product_status(pid=product.get("pimUniqueId", "pid"), status="FAILED",
+        #                                                status_desc="|".join(error))
+        #                     product["errors"] = "|".join(error)
+        #                     failed_product_list.append(product)
+        #                 else:
+        #                     raw_products_list.append(product)
+        #             else:
+        #                 raw_products_list.append(product)
+        # raw_products_list = remove_duplicates_from_list(raw_products_list)
+        # failed_product_list = remove_duplicates_from_list(failed_product_list)
+
+        return raw_products_list, failed_product_list
+
+    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False):
         self.processed_list = []
+        self.failed_processed_products = []
         self.product_counter = 0
         self.success_count = 0
         self.failed_count = 0
@@ -387,15 +465,18 @@ class ProductProcessor(object):
         try:
             counter = 1
             status = True
+
             total_products = self.pim_channel_api.get()['data'].get('total', 0)
             if not total_products:
                 self.pim_channel_api.group_by_parent = False
                 total_products = self.pim_channel_api.get()['data'].get('total', 0)
             if total_products > 0:
-                raw_products_list = self.fetch_all_pim_products(include_variants)
-                self.pim_channel_api.products_total = len(raw_products_list)
+                self.pim_channel_api.products_total = total_products
+                raw_products_list, failed_products_list = self.fetch_all_pim_products(include_variants)
             else:
                 status = False
+
+
 
             # with open('./raw_products.json', 'w') as f:
             #     f.write(json.dumps(raw_products_list))
@@ -404,6 +485,12 @@ class ProductProcessor(object):
             #     raw_products_list = f.read()
             # raw_products_list = json.loads(raw_products_list)
             if status:
+                if len(failed_products_list)>0:
+                    self.failed_processed_products += failed_products_list
+                    self.failed_count += len(failed_products_list)
+                    self.update_export_status(status="EXPORT_IN_PROGRESS", success_count=self.success_count,
+                                              failed_count=self.failed_count)
+
                 # if total_products < 25000:
                 print(f"Received {total_products} products for the job processing")
 
@@ -436,7 +523,7 @@ class ProductProcessor(object):
             # except Exception as e:
             #     print_exc()
             #     error_pid = pid or f"export_pid_{counter}"
-            #     self.insert_product_status(self, pid=error_pid , status="FAILED", status_desc=f"{str(e)}")
+            #     self.insert_product_status(pid=error_pid , status="FAILED", status_desc=f"{str(e)}")
 
 
             if update_product_count:
@@ -448,7 +535,7 @@ class ProductProcessor(object):
                     self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
                                               failed_count=self.failed_count)
             else:
-                self.update_export_status(status="PRODUCTS_PROCESSED")
+                self.update_export_status(status="PRODUCTS_PROCESSED", failed_count=self.failed_count)
 
             # else:
             #     print("Perform multi threading")
@@ -493,7 +580,7 @@ class ProductProcessor(object):
             self.pim_channel_api.import_to_pim(file_url, custom_reference_id)
             print(file_url)
         elif auto_export == True:
-            file_url = self.pim_channel_api.upload_csv(self.processed_list, "sample_app_response_")
+            file_url = self.pim_channel_api.upload_csv(self.processed_list, file_name)
             self.pim_channel_api.import_to_pim(file_url, custom_reference_id)
             print(file_url)
 
@@ -502,6 +589,24 @@ class ProductProcessor(object):
 
         uploaded_url = self.pim_channel_api.upload_to_s3(file_path)
         return uploaded_url
+
+    def write_failed_file(self, failed_product_list):
+        df = pd.DataFrame(failed_product_list)
+
+        # rearrange columns
+
+        cols = list(df.columns)
+        df["errors"] = df["errors"].str.replace("|", "\n\n", regex=False)
+        if "errors" in cols:
+            cols.remove('errors')
+            cols.sort()
+            cols = ['errors'] + cols
+        df = df[cols]
+        file_name = f'failed_products_{self.reference_id}_{str(int(time.time()))}.csv'
+        # save to csv
+        df.to_csv(file_name, index=False)
+        file_url = self.upload_to_s3(file_name)
+        return file_url
 
     def update_export_status(self, status="STARTED", success_file="", failed_file="", success_count=None,
                              failed_count=None):
@@ -522,15 +627,27 @@ class ProductProcessor(object):
             data["failed_file_download_links"] = {
                 "CSV": failed_file
             }
+        elif status in ["PRODUCTS_FAILED","EXPORTED","FAILED"] and len(self.failed_processed_products)>0:
+            failed_file_url = self.write_failed_file(self.failed_processed_products)
+            data["failed_file_download_links"] = {
+                "CSV": failed_file_url
+            }
+
         total = self.pim_channel_api.products_total or 0
+        if status in ["PRODUCTS_FAILED", "EXPORTED", "FAILED"] and failed_count and success_count:
+            failed_count += self.failed_count
+            total = failed_count + success_count
         if (success_count and success_count > 0) or (failed_count and failed_count > 0):
             data["export_stats"] = {}
             if total and total > 0:
                 data["export_stats"]["total"] = total
             if success_count and success_count > 0:
                 data["export_stats"]["success"] = success_count
+
             if failed_count and failed_count > 0:
                 data["export_stats"]["failed"] = failed_count
+
+
         self.pim_channel_api.update_export_status(data)
 
     def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="Template_Export.csv",
@@ -539,14 +656,19 @@ class ProductProcessor(object):
         # transformer = Transformer(product_schema)
         tsv_products = list()
         template_outout = []
-        success_count = 0
-        failed_count = 0
+        self.success_count = 0
+        self.failed_count = 0
+        self.failed_processed_products = []
 
         try:
             # if add_parent_rows:
                 # self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True,
                 #                                      slice_id=None)
-            all_products_with_variants = self.fetch_all_pim_products(include_variants=True)
+            all_products_with_variants, failed_products_list = self.fetch_all_pim_products(include_variants=True)
+
+            failed_count = len(failed_products_list)
+            if failed_count>0:
+                self.failed_processed_products = failed_products_list
             for product in all_products_with_variants:
                 # product = transformer.transform(product)
                 try:
@@ -564,37 +686,14 @@ class ProductProcessor(object):
                         100, 9999)
                     self.insert_product_status(pid, "STARTED", f"Product processing started for {pid}")
                     counter = counter + 1
-                    success_count = success_count + 1
+                    self.success_count = self.success_count + 1
                     # TODO Manage the product level cleanup and final expected custom channel format
                 except Exception as e:
                     print(e)
                     print_exc()
-                    failed_count = failed_count + 1
-
-            # self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False, slice_id=None)
-            # for product in self.pim_channel_api:
-            #     # product = transformer.transform(product)
-            #     try:
-            #         tsv_product = list()
-            #         for schema_key in properties_schema:
-            #             data = product.get(schema_key, '')
-            #             if data:
-            #                 data = ",".join(data) if isinstance(data, list) else data
-            #             else:
-            #                 data = str(data)
-            #             tsv_product.append(data)
-            #         # print(tsv_product)
-            #         tsv_products.append(tsv_product)
-            #         pid = product.get("pimUniqueId") or product.get("id") or product.get("sku") or random.randint(100,
-            #                                                                                                       9999)
-            #         self.insert_product_status(pid, "STARTED", f"Product processing started for {pid}")
-            #         counter = counter + 1
-            #         success_count = success_count + 1
-            #         # TODO Manage the product level cleanup and final expected custom channel format
-            #     except Exception as e:
-            #         print(e)
-            #         print_exc()
-            #         failed_count = failed_count + 1
+                    product["errors"] = str(e)
+                    self.failed_processed_products.append(product)
+                    self.failed_count = self.failed_count + 1
 
             if header:
                 tsv_products.insert(0, properties_schema)
@@ -605,8 +704,8 @@ class ProductProcessor(object):
                     header_row_counter += 1
             # print(tsv_products)
             template_outout = write_csv_file(data=tsv_products, delimiter="\t", filename=filename)
-            self.update_export_status(status="PRODUCTS_PROCESSED", success_count=success_count,
-                                      failed_count=failed_count)
+            self.update_export_status(status="PRODUCTS_PROCESSED", success_count=self.success_count,
+                                      failed_count=self.failed_count)
             # template_op_url = self.upload_to_s3(template_outout)
         except Exception as e:
             print_exc()
