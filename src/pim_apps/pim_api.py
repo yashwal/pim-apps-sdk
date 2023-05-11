@@ -337,6 +337,7 @@ class ProductProcessor(object):
         self.pim_channel_api.group_by_parent = True if group_by_parent == "GROUP_BY_PARENT" else False
         # self.raw_products_list = []
         self.product_status_instance = ProductStatus(self.task_id)
+        self.failed_processed_products = []
 
 
     def insert_product_status(self, pid="", status="SUCCESS", status_desc=""):
