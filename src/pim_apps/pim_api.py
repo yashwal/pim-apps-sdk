@@ -599,8 +599,8 @@ class ProductProcessor(object):
             # rearrange columns
     
             cols = list(df.columns)
-            #if "errors" in cols:
-            df["errors"] = df.get("errors",{}).str.replace("|", "\n\n", regex=False)
+            if "errors" in cols:
+                df["errors"] = str(df.get("errors","")).replace("|", "\n\n", regex=False)
             if "errors" in cols:
                 cols.remove('errors')
                 cols.sort()
