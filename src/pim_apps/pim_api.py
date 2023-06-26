@@ -6,7 +6,7 @@ import time
 from time import time as time_time, sleep
 import pandas as pd
 import requests
-from .utils import get_pepperx_domain, get_pim_domain, get_pim_app_domain, get_a2c_domain, write_csv_file,remove_duplicates_from_list
+from .utils import get_pepperx_domain, get_pim_domain, get_pim_app_domain, get_a2c_domain, write_csv_file,remove_duplicates_from_list, flatten
 from .pepperx_db import ProductStatus, App, AppUser, AppUserPIM
 import boto3
 import random
@@ -592,22 +592,28 @@ class ProductProcessor(object):
         return uploaded_url
 
     def write_failed_file(self, failed_product_list):
-        df = pd.DataFrame(failed_product_list)
-
-        # rearrange columns
-
-        cols = list(df.columns)
-        df["errors"] = df["errors"].str.replace("|", "\n\n", regex=False)
-        if "errors" in cols:
-            cols.remove('errors')
-            cols.sort()
-            cols = ['errors'] + cols
-        df = df[cols]
-        file_name = f'failed_products_{self.reference_id}_{str(int(time.time()))}.csv'
-        # save to csv
-        df.to_csv(file_name, index=False)
-        file_url = self.upload_to_s3(file_name)
-        return file_url
+        try:
+            flattened_failed_list = flatten(failed_product_list)
+            df = pd.DataFrame(failed_product_list)
+    
+            # rearrange columns
+    
+            cols = list(df.columns)
+            df["errors"] = df["errors"].str.replace("|", "\n\n", regex=False)
+            if "errors" in cols:
+                cols.remove('errors')
+                cols.sort()
+                cols = ['errors'] + cols
+            df = df[cols]
+            file_name = f'failed_products_{self.reference_id}_{str(int(time.time()))}.csv'
+            # save to csv
+            df.to_csv(file_name, index=False)
+            file_url = self.upload_to_s3(file_name)
+            return file_url
+        except ValueError as e:
+            print(e)
+            print_exc()
+            return ""
 
     def update_export_status(self, status="STARTED", success_file="", failed_file="", success_count=None,
                              failed_count=None):
