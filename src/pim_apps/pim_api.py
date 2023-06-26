@@ -629,10 +629,15 @@ class ProductProcessor(object):
                 "CSV": failed_file
             }
         elif status in ["PRODUCTS_FAILED","EXPORTED","FAILED"] and len(self.failed_processed_products)>0:
-            failed_file_url = self.write_failed_file(self.failed_processed_products)
-            data["failed_file_download_links"] = {
-                "CSV": failed_file_url
-            }
+            try:
+                failed_file_url = self.write_failed_file(self.failed_processed_products)
+                data["failed_file_download_links"] = {
+                    "CSV": failed_file_url
+                }
+            except ValueError as e:
+                print(e)
+                print_exc()
+
 
         total = self.pim_channel_api.products_total or 0
         if status in ["PRODUCTS_FAILED", "EXPORTED", "FAILED"] and failed_count and success_count:
