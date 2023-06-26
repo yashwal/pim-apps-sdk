@@ -599,7 +599,7 @@ class ProductProcessor(object):
             # rearrange columns
     
             cols = list(df.columns)
-            df["errors"] = df["errors"].str.replace("|", "\n\n", regex=False)
+            df["errors"] = df.get("errors","").str.replace("|", "\n\n", regex=False)
             if "errors" in cols:
                 cols.remove('errors')
                 cols.sort()
