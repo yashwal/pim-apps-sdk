@@ -337,3 +337,43 @@ class Dict2Class(object):
     def __init__(self, my_dict):
         for key in my_dict:
             setattr(self, key, my_dict[key])
+
+
+def slack_notifier(channel="#infinity-template-jobs", title="Pepper-X App Alert",
+                   header="New Pepper-X App User installed", parameters={}):
+    url = "https://hooks.slack.com/services/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"
+
+    payload = {
+        "channel": channel,
+        "username": title,
+        "blocks": [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": header
+                }
+            },
+            {
+                "type": "section",
+                "fields": [
+                ]
+            }
+        ]
+    }
+
+    for key in parameters:
+        print(f"*{key} -- :*n{parameters.get(key, '-')} ")
+        payload["blocks"][1]["fields"].append({
+            "type": "mrkdwn",
+            "text": f"*{key}:*\n {parameters.get(key, '-')} "
+        })
+
+    payload = json.dumps(payload)
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    print(response.text)
