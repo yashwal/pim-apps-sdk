@@ -6,7 +6,7 @@ import time
 from time import time as time_time, sleep
 import pandas as pd
 import requests
-from .utils import get_pepperx_domain, get_pim_domain, get_pim_app_domain, get_a2c_domain, write_csv_file,remove_duplicates_from_list, flatten
+from .utils import get_pepperx_domain, get_pim_domain, get_pim_app_domain, get_a2c_domain, write_csv_file,remove_duplicates_from_list, flatten, slack_notifier
 from .pepperx_db import ProductStatus, App, AppUser, AppUserPIM
 import boto3
 import random
@@ -724,3 +724,77 @@ class ProductProcessor(object):
             print_exc()
             print(e)
         return template_outout
+
+
+class PIMInstaller():
+    def __init__(self):
+        pass
+
+    '''
+    pim_data: dict -- Must have appCustomId, siteName, orgKey and description
+    cookie: str -- _un_sso_id
+    slack_params: dict -- Any key value pair which needs to be notified in slack
+    
+    Returns:
+    app_creds: dict, pim_creds: dict
+    '''
+    def install(self, pim_data, cookie, slack_params={}):
+        try:
+
+            payload = dict()
+            payload["appCustomId"] = pim_data.get("appCustomId", "")
+            payload["siteName"] = pim_data.get("siteName", "")
+            payload["description"] = pim_data.get("description", "")
+            headers = {
+                'content-type': "application/json"
+            }
+
+            cookies_obj = {"_un_sso_uid": cookie}
+            url = get_pim_app_domain() + "api/v3/" + pim_data.get("orgKey","") + "/register"
+            response = requests.request("POST", url, data=json.dumps(payload), headers=headers, cookies=cookies_obj)
+            response_data = response.json()
+
+            if response.status_code != 200:
+                raise ValueError(
+                    "Pim Authorization failed: status: {} body : {}".format(str(response.status_code), response.text)
+                )
+
+            if "data" not in response_data or "apiKey" not in response_data["data"]:
+                raise ValueError("Pim Authorization failed due to data expectation")
+
+            api_key = response_data.get("data", {}).get("apiKey","")
+            org_key = pim_data.get("orgKey")
+            # TODO Send these to appusercreds
+            org_app_id = response_data.get("data", {}).get("org_app_id")
+
+            channel_id = response_data.get("data", {}).get("channel_id")
+            adapter_id = response_data.get("data", {}).get("adapter_id")
+
+            if adapter_id is None:
+                print("App already exists, delete the app to reinstall")
+
+            pim_creds = {"api_key": api_key, "org_key": org_key, "site_name": pim_data.get("siteName", ""),
+                         "email": pim_data.get("userEmail", "apps@unbxd.com")}
+
+            app_creds = {"org_app_id": org_app_id, "channel_id": channel_id, "adapter_id": adapter_id}
+            app_custom_id = pim_data.get('appCustomId', '')
+            if api_key:
+
+                slack_params.update(pim_creds)
+                slack_notifier(channel="#pim-apps", title="New App Installation", header=f"New App Installed for {app_custom_id}", parameters=slack_params)
+            else:
+                slack_notifier(channel="#pim-apps", title="New App Installation Fail",
+                               header=f"New App Installed failed for {app_custom_id}", parameters=slack_params)
+            return app_creds, pim_creds
+
+        except Exception as e:
+            print_exc()
+            print("PIM install failed")
+            string_buffer = io.StringIO()
+            print_exc(file=string_buffer)
+            traceback_str = string_buffer.getvalue()
+            status_msg = f"Got into some error {str(traceback_str)}"
+            slack_notifier(channel="#pim-apps", title="New App Installation Fail",
+                           header=f"New App Installed failed due to {str(e)}", parameters=slack_params)
+            return {"error":f"PIM install failed due to {str(e)}" }, {}
+
