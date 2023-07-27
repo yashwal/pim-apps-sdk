@@ -8,9 +8,9 @@ import boto3
 
 os.environ['A2C_BASE_URL'] = "https://api.api2cart.com/"
 
-os.environ['PIM_APP_BASE_URL'] = "https://pim-apps.unbxd.io/pim/"
-os.environ['PIM_BASE_URL'] = "https://pim.unbxd.io/"
-os.environ['PEPPERX_URL'] = "https://pim.unbxd.io/pepperx/"
+os.environ['PIM_APP_BASE_URL'] = os.environ.get('PIM_APP_BASE_URL')  or "https://pim-apps.unbxd.io/pim/"
+os.environ['PIM_BASE_URL'] = os.environ.get('PIM_BASE_URL') or  "https://pim.unbxd.io/"
+os.environ['PEPPERX_URL'] = os.environ.get('PEPPERX_URL') or "https://pim.unbxd.io/pepperx/"
 
 os.environ['QA_PIM_APP_BASE_URL'] = "http://pimqa-apps.unbxd.io/pim/"
 os.environ['QA_PIM_BASE_URL'] = "http://pimqa.unbxd.io/"
