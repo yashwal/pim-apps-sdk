@@ -121,7 +121,7 @@ class AppUser(object):
             data = response.text
             if response.status_code in [200, 201]:
                 app_data = json.loads(data)
-                app_data = app_data["data"]
+                app_data = app_data.get("data")
                 return app_data
             else:
                 print(response.json())
