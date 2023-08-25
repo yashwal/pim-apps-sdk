@@ -342,7 +342,7 @@ class Dict2Class(object):
 
 def slack_notifier(channel="#infinity-template-jobs", title="Pepper-X App Alert",
                    header="New Pepper-X App User installed", parameters={}):
-    url = "https://hooks.slack.com/services/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"
+    url = "https://hooks.slack.com/services/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"
 
     payload = {
         "channel": channel,
