@@ -303,7 +303,7 @@ class PIMChannelAPI(object):
         return url
 
     def upload_csv(self, req_data, input_file_name, separator=",", zipped=True, add_time_stamp = True):
-        file_name = self.generate_csv(req_data, input_file_name, zipped, separator=separator, add_time_stamp)
+        file_name = self.generate_csv(req_data, input_file_name, zipped, separator=separator, add_time_stamp=add_time_stamp)
         # csv_url = file_name
         csv_url = self.upload_to_s3(file_name)
         return csv_url
