@@ -104,7 +104,7 @@ class PIMChannelAPI(object):
                     self.cache = products
                 self.n += 1
                 if len(self.cache) > 0 or len(self.cache)==0:
-                    rern self.extract_product_errors(self.cache[index])
+                    return self.extract_product_errors(self.cache[index])
                 else:
                     return self.extract_product_errors([])
                     # return self.cache[index]
