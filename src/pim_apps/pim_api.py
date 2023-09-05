@@ -85,7 +85,7 @@ class PIMChannelAPI(object):
                     # return self.cache[index]
                 else:
                     print(f"!!!! Optimisation issue or post transformer issue when only 19 products came or lesser products came")
-                    return ({}, [])
+                    #return ({}, [])
             else:
                 raise StopIteration
         else:
@@ -104,7 +104,7 @@ class PIMChannelAPI(object):
                     self.cache = products
                 self.n += 1
                 if len(self.cache) > 0 or len(self.cache)==0:
-                    return self.extract_product_errors(self.cache[index])
+                    rern self.extract_product_errors(self.cache[index])
                 else:
                     return self.extract_product_errors([])
                     # return self.cache[index]
