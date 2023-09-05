@@ -404,40 +404,43 @@ class ProductProcessor(object):
         export_data = self.pim_channel_api.get_export_details()
         export_details = export_data.get("data",{}).get("metaInfo",{}).get("export",{})
         export_with_readiness = export_details.get("check_readiness", False)
-
-        for product, error in self.pim_channel_api:
-            if isinstance(product, dict):
-                if export_with_readiness:
-                    errorList = product.get("errorList", [])
-                    errorList = [errorList] if isinstance(errorList, str) else errorList
-                    if len(error)>0 or len(errorList)>0:
-                        error += errorList
-                        self.insert_product_status(pid=product.get("pimUniqueId","pid"), status="FAILED", status_desc="|".join(error))
-                        product["errors"] = "|".join(error)
-                        failed_product_list.append(product)
+        try:
+            for product, error in self.pim_channel_api:
+                if isinstance(product, dict):
+                    if export_with_readiness:
+                        errorList = product.get("errorList", [])
+                        errorList = [errorList] if isinstance(errorList, str) else errorList
+                        if len(error)>0 or len(errorList)>0:
+                            error += errorList
+                            self.insert_product_status(pid=product.get("pimUniqueId","pid"), status="FAILED", status_desc="|".join(error))
+                            product["errors"] = "|".join(error)
+                            failed_product_list.append(product)
+                        else:
+                            raw_products_list.append(product)
                     else:
                         raw_products_list.append(product)
-                else:
-                    raw_products_list.append(product)
-                if include_variants and product and product.get("pimProductType","") == "PARENT" and product.get("pimUniqueId"):
-                    pim_variants_fetcher = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False,
-                                                         parent_id=product.get("pimUniqueId",""))
-                    for v_product, v_error in pim_variants_fetcher:
-                        if isinstance(product, dict):
-                            if export_with_readiness:
-                                v_errorList = v_product.get("errorList", [])
-                                v_errorList = [v_errorList] if isinstance(v_errorList, str) else v_errorList
-                                if len(v_error) > 0 or len(v_errorList) > 0:
-                                    v_error += v_errorList
-                                    self.insert_product_status(pid=product.get("pimUniqueId", "pid"), status="FAILED",
-                                                               status_desc="|".join(v_error))
-                                    product["errors"] = "|".join(v_error)
-                                    failed_product_list.append(product)
+                    if include_variants and product and product.get("pimProductType","") == "PARENT" and product.get("pimUniqueId"):
+                        pim_variants_fetcher = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False,
+                                                             parent_id=product.get("pimUniqueId",""))
+                        for v_product, v_error in pim_variants_fetcher:
+                            if isinstance(product, dict):
+                                if export_with_readiness:
+                                    v_errorList = v_product.get("errorList", [])
+                                    v_errorList = [v_errorList] if isinstance(v_errorList, str) else v_errorList
+                                    if len(v_error) > 0 or len(v_errorList) > 0:
+                                        v_error += v_errorList
+                                        self.insert_product_status(pid=product.get("pimUniqueId", "pid"), status="FAILED",
+                                                                   status_desc="|".join(v_error))
+                                        product["errors"] = "|".join(v_error)
+                                        failed_product_list.append(product)
+                                    else:
+                                        raw_products_list.append(product)
+    
                                 else:
-                                    raw_products_list.append(product)
-
-                            else:
-                                raw_products_list.append(v_product)
+                                    raw_products_list.append(v_product)
+        except Exception as e:
+            print_exc()
+            print(e)
 
         # TODO len(raw_products_list) == 0 is removed in the below line for etsy Solving Alpha
         # if include_variants and not self.pim_channel_api.group_by_parent:
