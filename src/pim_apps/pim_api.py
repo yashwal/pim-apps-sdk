@@ -274,14 +274,14 @@ class PIMChannelAPI(object):
             df.to_csv(final_local_url, index=index, sep=str(separator))
         return final_local_url
 
-    def upload_to_s3(self, filename):
+    def upload_to_s3(self, filename, bucket = "unbxd-pim-ui"):
         """Upload a file to an S3 bucket
         :param file_name: File to upload
         :param bucket: Bucket to upload to
         :param object_name: S3 object name. If not specified then file_name is used
         :return: True if file was uploaded, else False
         """
-        bucket = "unbxd-pim-ui"
+        #bucket = "unbxd-pim-ui"
         region = os.environ['aws_region']
         aws_access_key_id = os.environ['aws_access_key_id']
         aws_secret_access_key = os.environ['aws_secret_access_key']
@@ -305,10 +305,10 @@ class PIMChannelAPI(object):
         print(url)
         return url
 
-    def upload_csv(self, req_data, input_file_name, separator=",", zipped=True, add_time_stamp = True):
+    def upload_csv(self, req_data, input_file_name, separator=",", zipped=True, add_time_stamp = True, bucket = "unbxd-pim-ui"):
         file_name = self.generate_csv(req_data, input_file_name, zipped, separator=separator, add_time_stamp=add_time_stamp)
         # csv_url = file_name
-        csv_url = self.upload_to_s3(file_name)
+        csv_url = self.upload_to_s3(file_name, bucket)
         return csv_url
     
     def get_import_details(self):
