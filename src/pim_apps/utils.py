@@ -142,14 +142,14 @@ def generate_csv(data, file_name="API_data_fetch", zipped=False, index=False):
         df.to_csv(final_local_url, index=index)
     return final_local_url
 
-def upload_to_s3(filename):
+def upload_to_s3(filename, bucket = "unbxd-pim-ui"):
     """Upload a file to an S3 bucket
     :param file_name: File to upload
     :param bucket: Bucket to upload to
     :param object_name: S3 object name. If not specified then file_name is used
     :return: True if file was uploaded, else False
     """
-    bucket = "unbxd-pim-ui"
+    #bucket = "unbxd-pim-ui"
     if 'aws_region' in os.environ:
         region = os.environ.get('aws_region')
     else:
