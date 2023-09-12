@@ -378,3 +378,28 @@ def slack_notifier(channel="#infinity-template-jobs", title="Pepper-X App Alert"
     response = requests.request("POST", url, headers=headers, data=payload)
 
     print(response.text)
+
+
+def import_hook(api_key, file_url, reference_id=None, template_id=None):
+    url = f"{get_pim_app_domain()}v1/imports"
+
+    reference_id = reference_id
+    template_id = template_id
+
+    payload = json.dumps({
+        "url": file_url,  # import_csv_url #import_json_url
+        "referenceId": reference_id if reference_id and reference_id != "-" and reference_id != "" else None,
+        "templateId": template_id if template_id and template_id != "-" and template_id != "" else None
+    })
+    headers = {
+        'Authorization': api_key,
+        'Content-Type': 'application/json'
+    }
+    print(f"Requesting URL ---  {url} ")
+    print(f"{json.dumps(payload)} --- {json.dumps(headers)}")
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    print(response.text)
+
+    return json.loads(response.text)
