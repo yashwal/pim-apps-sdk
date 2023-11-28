@@ -21,6 +21,11 @@ os.environ['PIMDEV_APP_BASE_URL'] = "http://pimdev-apps.unbxd.io/pim/"
 os.environ['PIMDEV_BASE_URL'] = "http://pimdev.unbxd.io/"
 os.environ['PIMDEV_PEPPERX_URL'] = "http://pimdev.unbxd.io/pepperx/"
 
+
+os.environ['PXM_APP_BASE_URL'] = "https://pxm-apps.unbxd.io/pim/"
+os.environ['PXM_BASE_URL'] = "https://pxm.unbxd.io/"
+os.environ['PXM_PEPPERX_URL'] = "https://pxm.unbxd.io/pepperx/"
+
 EXPORT_STATUS = {"STARTED": "STARTED", "CHECK_IN_PROGRESS": "CHECK_IN_PROGRESS",
                  "EXPORT_IN_PROGRESS": "EXPORT_IN_PROGRESS", "PRODUCTS_PROCESSED": "PRODUCTS_PROCESSED",
                  "PRODUCTS_FAILED": "PRODUCTS_FAILED", "EXPORTED": "EXPORTED", "FAILED": "FAILED",
@@ -37,6 +42,8 @@ def get_pim_app_domain():
         url = os.environ['QA_PIM_APP_BASE_URL']
     elif env == "PIMDEV":
         url = os.environ['PIMDEV_APP_BASE_URL']
+    elif env == "PXM":
+      url = os.environ['PXM_APP_BASE_URL']
 
     # TODO: When upgrading to python 3.10.X use the below code
     # match env:
@@ -62,6 +69,8 @@ def get_pim_domain():
         url = os.environ['QA_PIM_BASE_URL']
     elif env == "PIMDEV":
         url = os.environ['PIMDEV_BASE_URL']
+    elif env == "PXM":
+        url = os.environ['PXM_BASE_URL']
 
     # TODO: When upgrading to python 3.10.X use the below code
     # match env:
@@ -90,6 +99,8 @@ def get_pepperx_domain():
         url = os.environ['QA_PEPPERX_URL']
     elif env == "PIMDEV":
         url = os.environ['PIMDEV_PEPPERX_URL']
+    elif env == "PXM":
+        url = os.environ['PXM_PEPPERX_URL']
 
     # TODO: When upgrading to python 3.10.X use the below code
     # match env:
