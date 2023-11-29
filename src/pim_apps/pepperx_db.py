@@ -43,11 +43,10 @@ class App(object):
     def get(self, app_id, app_name=""):
         try:
             url = f"{get_pepperx_domain()}api/v1/app_data/?app_id={app_id}"
-            payload = json.dumps({})
             headers = {
                 'Content-Type': 'application/json'
             }
-            response = requests.request("GET", url, headers=headers, data=payload)
+            response = requests.request("GET", url, headers=headers)
             data = response.text
             print("App.get data", data)
             if response.status_code in [200, 201]:
@@ -112,12 +111,10 @@ class AppUser(object):
     def get(self):
         try:
             url = f"{get_pepperx_domain()}api/v1/app_user_data/?app_id={self.app_id}&identifier={self.identifier}"
-
-            payload = json.dumps({})
             headers = {
                 'Content-Type': 'application/json'
             }
-            response = requests.request("GET", url, headers=headers, data=payload)
+            response = requests.request("GET", url, headers=headers)
             data = response.text
             if response.status_code in [200, 201]:
                 app_data = json.loads(data)
