@@ -141,12 +141,10 @@ class AppUserPIM(object):
     def get(self):
         try:
             url = f"{get_pepperx_domain()}api/v1/app_user_pim_data/?api_key={self.api_key}"
-
-            payload = json.dumps({})
             headers = {
                 'Content-Type': 'application/json'
             }
-            response = requests.request("GET", url, headers=headers, data=payload)
+            response = requests.request("GET", url, headers=headers)
             data = response.text
             # print("User creds & PIM Creds")
             print(response.text)
