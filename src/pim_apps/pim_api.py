@@ -628,15 +628,19 @@ class ProductProcessor(object):
             df = pd.DataFrame(failed_product_list)
     
             # rearrange columns
-    
-            cols = list(df.columns)
-            if "errors" in cols:
-                df["errors"] = str(df.get("errors","")).replace("|", "\n\n", regex=False)
-            if "errors" in cols:
-                cols.remove('errors')
-                cols.sort()
-                cols = ['errors'] + cols
-            df = df[cols]
+            try:
+                cols = list(df.columns)
+                if "errors" in cols:
+                    df["errors"] = str(df.get("errors","")).replace("|", "\n\n")
+                if "errors" in cols:
+                    cols.remove('errors')
+                    cols.sort()
+                    cols = ['errors'] + cols
+                df = df[cols]
+            except ValueError as e:
+                print(e)
+                print_exc()
+                return ""
             file_name = f'failed_products_{self.reference_id}_{str(int(time.time()))}.csv'
             # save to csv
             df.to_csv(file_name, index=False)
