@@ -379,8 +379,24 @@ class ProductProcessor(object):
         try:
             if product is not None:
                 pid = product.get("id") or random.randint(100, 9999)
+
+                # TODO
+                # Check if the task ID and product ID entry is there in the product transaction table
+                # If status is success for the entry, skip process product invokation
+                # ??? If it is fail, then run process product again
+                # If entry is not found, run invoke process_product
                 # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
-                proccessed_product, status = process_product(product, self.product_counter)
+
+                task_product_status = self.product_status_instance.get(product.get("pimUniqueId"))
+
+                if len(task_product_status.keys()) == 0:
+                    proccessed_product, status = process_product(product, self.product_counter)
+                else:
+                    proccessed_product = product
+                    status = task_product_status.get("type", "")
+                    if status == "COMPLETE":
+                        status = "SUCCESS"
+
                 self.product_counter += 1
                 if status == "SUCCESS":
                     self.success_count += 1
