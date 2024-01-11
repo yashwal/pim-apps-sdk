@@ -416,20 +416,24 @@ class ProductProcessor(object):
 
     def process_and_format_success_products(self, products_link, include_variants=False, exclude_pim_properties=False):
         df = pd.read_json(products_link)
-        columns_to_drop = ['col1', 'col3']  # List the names of the columns you want to drop
+        columns_to_drop = ['pimCreatedAt', 'pimUpdatedAt','pimUniqueId', 'pimProductType','pimParentId']  # List the names of the columns you want to drop
 
         if include_variants and not self.pim_channel_api.group_by_parent:
             df_variant = df[df['pimProductType'] == 'VARIANT']
             df_solo = df[df['pimProductType'] == 'SOLO']
             if exclude_pim_properties:
-                df_variant = df_variant.drop(columns_to_drop, axis=1)
-                df_solo = df_solo.drop(columns_to_drop, axis=1)
+                for col in columns_to_drop:
+                    if col in df_variant.columns:
+                        df_variant = df_variant.drop(col, axis=1)
+                    if col in df_solo.columns:
+                        df_solo = df_solo.drop(col, axis=1)
             final_list = df_variant.to_dict("records") + df_solo.to_dict("records")
             return final_list
 
         if include_variants and self.pim_channel_api.group_by_parent:
-            if exclude_pim_properties:
-                df = df.drop(columns_to_drop, axis=1)
+            for col in columns_to_drop:
+                    if col in df.columns:
+                        df = df.drop(col, axis=1)
             final_list = df.to_dict('records')
             return final_list
 
@@ -450,10 +454,14 @@ class ProductProcessor(object):
         merged_df['variants'] = merged_df['variants'].apply(lambda x: x if isinstance(x, list) else [])
 
         if exclude_pim_properties:
-                merged_df = merged_df.drop(columns_to_drop, axis=1)
+            for col in columns_to_drop:
+                    if col in merged_df.columns:
+                        merged_df = merged_df.drop(col, axis=1)
 
         if exclude_pim_properties:
-                df_solo = df_solo.drop(columns_to_drop, axis=1)
+            for col in columns_to_drop:
+                    if col in df_solo.columns:
+                        df_solo = df_solo.drop(col, axis=1)
 
         parent_list = merged_df.to_dict('records')
 
