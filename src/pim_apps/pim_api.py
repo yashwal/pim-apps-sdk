@@ -469,15 +469,26 @@ class ProductProcessor(object):
     def fetch_all_pim_products(self, include_variants=False):
         raw_products_list = []
         failed_product_list = []
-        export_data = self.pim_channel_api.get_export_details()
-        export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
+        internal_file_download_link = ""
+        internal_failed_file_download_link = ""
+        count = 0
 
-        internal_file_download_link = export_details.get('internalPartnerExport', {}).get(
-            'internal_file_download_links', {}).get("JSON", "")
-        internal_failed_file_download_link = export_details.get('internalPartnerExport', {}).get(
-            'internal_failed_file_download_links', {}).get("JSON", "")
+        while internal_file_download_link or internal_failed_file_download_link and count < 480:
+            export_data = self.pim_channel_api.get_export_details()
+            export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
 
-        export_with_readiness = export_details.get("check_readiness", False)
+            internal_file_download_link = export_details.get('internalPartnerExport', {}).get(
+                'internal_file_download_links', {}).get("JSON", "")
+            internal_failed_file_download_link = export_details.get('internalPartnerExport', {}).get(
+                'internal_failed_file_download_links', {}).get("JSON", "")
+
+            sleep(15)
+            count = count+1
+            print("Waiting for internal file to be generated....")
+            print(f"Took {count*15} seconds...")
+
+
+        # export_with_readiness = export_details.get("check_readiness", False)
 
         try:
             raw_products_list = self.process_and_format_success_products(internal_file_download_link, include_variants)
