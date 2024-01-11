@@ -416,9 +416,17 @@ class ProductProcessor(object):
 
     def process_and_format_success_products(self, products_link, include_variants=False):
         df = pd.read_json(products_link)
-        if include_variants:
+
+        if include_variants and not self.pim_channel_api.group_by_parent:
+            df_variant = df[df['pimProductType'] == 'VARIANT']
+            df_solo = df[df['pimProductType'] == 'SOLO']
+            final_list = df_variant.to_dict("records") + df_solo.to_dict("records")
+            return final_list
+
+        if include_variants and self.pim_channel_api.group_by_parent:
             final_list = df.to_dict('records')
             return final_list
+
         # Separate parent, variant, and solo products
         df_parent = df[df['pimProductType'] == 'PARENT']
         df_variant = df[df['pimProductType'] == 'VARIANT']
@@ -461,15 +469,26 @@ class ProductProcessor(object):
     def fetch_all_pim_products(self, include_variants=False):
         raw_products_list = []
         failed_product_list = []
-        export_data = self.pim_channel_api.get_export_details()
-        export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
+        internal_file_download_link = ""
+        internal_failed_file_download_link = ""
+        count = 0
 
-        internal_file_download_link = export_details.get('internalPartnerExport', {}).get(
-            'internal_file_download_links', {}).get("JSON", "")
-        internal_failed_file_download_link = export_details.get('internalPartnerExport', {}).get(
-            'internal_failed_file_download_links', {}).get("JSON", "")
+        while internal_file_download_link or internal_failed_file_download_link and count < 480:
+            export_data = self.pim_channel_api.get_export_details()
+            export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
 
-        export_with_readiness = export_details.get("check_readiness", False)
+            internal_file_download_link = export_details.get('internalPartnerExport', {}).get(
+                'internal_file_download_links', {}).get("JSON", "")
+            internal_failed_file_download_link = export_details.get('internalPartnerExport', {}).get(
+                'internal_failed_file_download_links', {}).get("JSON", "")
+
+            sleep(15)
+            count = count+1
+            print("Waiting for internal file to be generated....")
+            print(f"Took {count*15} seconds...")
+
+
+        # export_with_readiness = export_details.get("check_readiness", False)
 
         try:
             raw_products_list = self.process_and_format_success_products(internal_file_download_link, include_variants)
