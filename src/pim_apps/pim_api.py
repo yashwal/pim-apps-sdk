@@ -379,8 +379,24 @@ class ProductProcessor(object):
         try:
             if product is not None:
                 pid = product.get("id") or random.randint(100, 9999)
+
+                # TODO
+                # Check if the task ID and product ID entry is there in the product transaction table
+                # If status is success for the entry, skip process product invokation
+                # ??? If it is fail, then run process product again
+                # If entry is not found, run invoke process_product
                 # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
-                proccessed_product, status = process_product(product, self.product_counter)
+
+                task_product_status = self.product_status_instance.get(product.get("pimUniqueId"))
+
+                if len(task_product_status.keys()) == 0:
+                    proccessed_product, status = process_product(product, self.product_counter)
+                else:
+                    proccessed_product = product
+                    status = task_product_status.get("type", "")
+                    if status == "COMPLETE":
+                        status = "SUCCESS"
+
                 self.product_counter += 1
                 if status == "SUCCESS":
                     self.success_count += 1
@@ -398,49 +414,77 @@ class ProductProcessor(object):
             self.failed_count += 1
             self.insert_product_status(pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
 
+    def process_and_format_success_products(self, products_link, include_variants=False):
+        df = pd.read_json(products_link)
+        if include_variants:
+            final_list = df.to_dict('records')
+            return final_list
+        # Separate parent, variant, and solo products
+        df_parent = df[df['pimProductType'] == 'PARENT']
+        df_variant = df[df['pimProductType'] == 'VARIANT']
+        df_solo = df[df['pimProductType'] == 'SOLO']
+
+        grouped_variants = df_variant.groupby('pimParentId').apply(lambda x: x.to_dict('records')).reset_index()
+        grouped_variants.columns = ['pimUniqueId', 'variants']
+
+        merged_df = pd.merge(df_parent, grouped_variants, on='pimUniqueId', how='left')
+
+        merged_df['variants'] = merged_df['variants'].apply(lambda x: x if isinstance(x, list) else [])
+
+        parent_list = merged_df.to_dict('records')
+
+        final_list = parent_list + df_solo.to_dict('records')
+
+        return final_list
+
+    def process_and_send_errors(self, df):
+        for index, row in df.iterrows():
+            product_id = row.get('pimUniqueId', "")
+
+            error_messages = []
+            if 'pimValidationErrors' in row and pd.notna(row['pimValidationErrors']):
+                error_messages.append(str(row['pimValidationErrors']))
+
+            if 'pimPostTransformerErrors' in row and pd.notna(row['pimPostTransformerErrors']):
+                error_messages.append(str(row['pimValidationErrors']))
+
+            if 'pimTransformationErrors' in row and pd.notna(row['pimTransformationErrors']):
+                error_messages.append(str(row['pimValidationErrors']))
+
+            full_error_message = '|'.join(error_messages)
+
+            self.insert_product_status(pid=product_id, status="FAILED",
+                                       status_desc=full_error_message)
+
+        return df.to_dict("records")
+
     def fetch_all_pim_products(self, include_variants=False):
         raw_products_list = []
         failed_product_list = []
         export_data = self.pim_channel_api.get_export_details()
-        export_details = export_data.get("data",{}).get("metaInfo",{}).get("export",{})
+        export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
+
+        internal_file_download_link = export_details.get('internalPartnerExport', {}).get(
+            'internal_file_download_links', {}).get("JSON", "")
+        internal_failed_file_download_link = export_details.get('internalPartnerExport', {}).get(
+            'internal_failed_file_download_links', {}).get("JSON", "")
+
         export_with_readiness = export_details.get("check_readiness", False)
+
         try:
-            for product, error in self.pim_channel_api:
-                if isinstance(product, dict):
-                    if export_with_readiness:
-                        errorList = product.get("errorList", [])
-                        errorList = [errorList] if isinstance(errorList, str) else errorList
-                        if len(error)>0 or len(errorList)>0:
-                            error += errorList
-                            self.insert_product_status(pid=product.get("pimUniqueId","pid"), status="FAILED", status_desc="|".join(error))
-                            product["errors"] = "|".join(error)
-                            failed_product_list.append(product)
-                        else:
-                            raw_products_list.append(product)
-                    else:
-                        raw_products_list.append(product)
-                    if include_variants and product and product.get("pimProductType","") == "PARENT" and product.get("pimUniqueId"):
-                        pim_variants_fetcher = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=False,
-                                                             parent_id=product.get("pimUniqueId",""))
-                        for v_product, v_error in pim_variants_fetcher:
-                            if isinstance(product, dict):
-                                if export_with_readiness:
-                                    v_errorList = v_product.get("errorList", [])
-                                    v_errorList = [v_errorList] if isinstance(v_errorList, str) else v_errorList
-                                    if len(v_error) > 0 or len(v_errorList) > 0:
-                                        v_error += v_errorList
-                                        self.insert_product_status(pid=product.get("pimUniqueId", "pid"), status="FAILED",
-                                                                   status_desc="|".join(v_error))
-                                        product["errors"] = "|".join(v_error)
-                                        failed_product_list.append(product)
-                                    else:
-                                        raw_products_list.append(product)
-    
-                                else:
-                                    raw_products_list.append(v_product)
+            raw_products_list = self.process_and_format_success_products(internal_file_download_link, include_variants)
         except Exception as e:
-            print_exc()
             print(e)
+            print_exc()
+
+        try:
+            failed_file_df = pd.read_json(internal_failed_file_download_link)
+            failed_product_list = self.process_and_send_errors(failed_file_df)
+        except Exception as e:
+            print(e)
+            print_exc()
+
+        return raw_products_list, failed_product_list
 
         # TODO len(raw_products_list) == 0 is removed in the below line for etsy Solving Alpha
         # if include_variants and not self.pim_channel_api.group_by_parent:
@@ -462,7 +506,7 @@ class ProductProcessor(object):
         # raw_products_list = remove_duplicates_from_list(raw_products_list)
         # failed_product_list = remove_duplicates_from_list(failed_product_list)
 
-        return raw_products_list, failed_product_list
+        # return raw_products_list, failed_product_list
 
     def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False):
         self.processed_list = []

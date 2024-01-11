@@ -232,6 +232,21 @@ class ProductStatus(object):
     #         print(e)
     #         print_exc()
 
+    def get(self, product_id):
+
+        url = f"{get_pepperx_domain()}api/v1/product/transaction?task_id={self.task_id}&product_id={product_id}"
+
+        headers = {
+            'accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+
+        response = requests.request("GET", url, headers=headers)
+
+        data = response.json()
+
+        return data.get("data", {})
+
     def post(self, data):
         try:
             url = f"{get_pepperx_domain()}api/v1/task/product/transaction"
