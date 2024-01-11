@@ -414,23 +414,33 @@ class ProductProcessor(object):
             self.failed_count += 1
             self.insert_product_status(pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
 
-    def process_and_format_success_products(self, products_link, include_variants=False):
+    def process_and_format_success_products(self, products_link, include_variants=False, exclude_pim_properties=False):
         df = pd.read_json(products_link)
+        columns_to_drop = ['col1', 'col3']  # List the names of the columns you want to drop
 
         if include_variants and not self.pim_channel_api.group_by_parent:
             df_variant = df[df['pimProductType'] == 'VARIANT']
             df_solo = df[df['pimProductType'] == 'SOLO']
+            if exclude_pim_properties:
+                df_variant = df_variant.drop(columns_to_drop, axis=1)
+                df_solo = df_solo.drop(columns_to_drop, axis=1)
             final_list = df_variant.to_dict("records") + df_solo.to_dict("records")
             return final_list
 
         if include_variants and self.pim_channel_api.group_by_parent:
+            if exclude_pim_properties:
+                df = df.drop(columns_to_drop, axis=1)
             final_list = df.to_dict('records')
             return final_list
 
+        
+        
         # Separate parent, variant, and solo products
         df_parent = df[df['pimProductType'] == 'PARENT']
         df_variant = df[df['pimProductType'] == 'VARIANT']
         df_solo = df[df['pimProductType'] == 'SOLO']
+
+        
 
         grouped_variants = df_variant.groupby('pimParentId').apply(lambda x: x.to_dict('records')).reset_index()
         grouped_variants.columns = ['pimUniqueId', 'variants']
@@ -438,6 +448,12 @@ class ProductProcessor(object):
         merged_df = pd.merge(df_parent, grouped_variants, on='pimUniqueId', how='left')
 
         merged_df['variants'] = merged_df['variants'].apply(lambda x: x if isinstance(x, list) else [])
+
+        if exclude_pim_properties:
+                merged_df = merged_df.drop(columns_to_drop, axis=1)
+
+        if exclude_pim_properties:
+                df_solo = df_solo.drop(columns_to_drop, axis=1)
 
         parent_list = merged_df.to_dict('records')
 
@@ -466,7 +482,7 @@ class ProductProcessor(object):
 
         return df.to_dict("records")
 
-    def fetch_all_pim_products(self, include_variants=False):
+    def fetch_all_pim_products(self, include_variants=False, exclude_pim_properties=False):
         raw_products_list = []
         failed_product_list = []
         internal_file_download_link = ""
@@ -492,7 +508,7 @@ class ProductProcessor(object):
 
         try:
             if(internal_file_download_link):
-                raw_products_list = self.process_and_format_success_products(internal_file_download_link, include_variants)
+                raw_products_list = self.process_and_format_success_products(internal_file_download_link, include_variants, exclude_pim_properties)
         except Exception as e:
             print(e)
             print_exc()
