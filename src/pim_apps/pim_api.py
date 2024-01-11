@@ -367,7 +367,7 @@ class ProductProcessor(object):
     def get_sorted_products_list(self, include_variants=False, exclude_pim_properties=False):
         print("Sorted Product List")
         sorted_product = []
-        all_products, failed_products = self.fetch_all_pim_products(include_variants, exclude_pim_properties)
+        all_products, failed_products = self.fetch_all_pim_products(include_variants=include_variants, exclude_pim_properties=exclude_pim_properties)
         if all_products and isinstance(all_products,list):
             sorted_product = sorted(all_products, key=lambda d: d.get('pimUniqueId',''))
         return sorted_product
@@ -809,7 +809,7 @@ class ProductProcessor(object):
             # if add_parent_rows:
                 # self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True,
                 #                                      slice_id=None)
-            all_products_with_variants, failed_products_list = self.fetch_all_pim_products(include_variants=True, exclude_pim_properties)
+            all_products_with_variants, failed_products_list = self.fetch_all_pim_products(include_variants=True, exclude_pim_properties=exclude_pim_properties)
 
             failed_count = len(failed_products_list)
             if failed_count>0:
