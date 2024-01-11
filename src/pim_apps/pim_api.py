@@ -473,7 +473,7 @@ class ProductProcessor(object):
         internal_failed_file_download_link = ""
         count = 0
 
-        while internal_file_download_link or internal_failed_file_download_link and count < 480:
+        while !(internal_file_download_link or internal_failed_file_download_link) and count < 480:
             export_data = self.pim_channel_api.get_export_details()
             export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
 
@@ -491,14 +491,16 @@ class ProductProcessor(object):
         # export_with_readiness = export_details.get("check_readiness", False)
 
         try:
-            raw_products_list = self.process_and_format_success_products(internal_file_download_link, include_variants)
+            if(internal_file_download_link):
+                raw_products_list = self.process_and_format_success_products(internal_file_download_link, include_variants)
         except Exception as e:
             print(e)
             print_exc()
 
         try:
-            failed_file_df = pd.read_json(internal_failed_file_download_link)
-            failed_product_list = self.process_and_send_errors(failed_file_df)
+            if(internal_failed_file_download_link):
+                failed_file_df = pd.read_json(internal_failed_file_download_link)
+                failed_product_list = self.process_and_send_errors(failed_file_df)
         except Exception as e:
             print(e)
             print_exc()
