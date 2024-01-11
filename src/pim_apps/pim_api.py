@@ -427,6 +427,8 @@ class ProductProcessor(object):
                         df_variant = df_variant.drop(col, axis=1)
                     if col in df_solo.columns:
                         df_solo = df_solo.drop(col, axis=1)
+            df_solo = df_solo.where(pd.notnull(df_solo), None)
+            df_variant = df_variant.where(pd.notnull(df_variant), None)
             final_list = df_variant.to_dict("records") + df_solo.to_dict("records")
             return final_list
 
@@ -434,6 +436,7 @@ class ProductProcessor(object):
             for col in columns_to_drop:
                     if col in df.columns:
                         df = df.drop(col, axis=1)
+            df = df.where(pd.notnull(df), None)
             final_list = df.to_dict('records')
             return final_list
 
@@ -443,6 +446,11 @@ class ProductProcessor(object):
         df_parent = df[df['pimProductType'] == 'PARENT']
         df_variant = df[df['pimProductType'] == 'VARIANT']
         df_solo = df[df['pimProductType'] == 'SOLO']
+
+        # Remove Nan
+        df_parent = df_parent.where(pd.notnull(df_parent), None)
+        df_variant = df_variant.where(pd.notnull(df_variant), None)
+        df_solo = df_solo.where(pd.notnull(df_solo), None)
 
         
 
@@ -462,9 +470,9 @@ class ProductProcessor(object):
             for col in columns_to_drop:
                     if col in df_solo.columns:
                         df_solo = df_solo.drop(col, axis=1)
-
+                        
+        
         parent_list = merged_df.to_dict('records')
-
         final_list = parent_list + df_solo.to_dict('records')
 
         return final_list
