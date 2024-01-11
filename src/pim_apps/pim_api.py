@@ -364,10 +364,10 @@ class ProductProcessor(object):
             print_exc()
             print(e)
 
-    def get_sorted_products_list(self, include_variants=False):
+    def get_sorted_products_list(self, include_variants=False, exclude_pim_properties=False):
         print("Sorted Product List")
         sorted_product = []
-        all_products, failed_products = self.fetch_all_pim_products(include_variants)
+        all_products, failed_products = self.fetch_all_pim_products(include_variants=include_variants, exclude_pim_properties=exclude_pim_properties)
         if all_products and isinstance(all_products,list):
             sorted_product = sorted(all_products, key=lambda d: d.get('pimUniqueId',''))
         return sorted_product
@@ -414,23 +414,45 @@ class ProductProcessor(object):
             self.failed_count += 1
             self.insert_product_status(pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
 
-    def process_and_format_success_products(self, products_link, include_variants=False):
+    def process_and_format_success_products(self, products_link, include_variants=False, exclude_pim_properties=False):
         df = pd.read_json(products_link)
+        columns_to_drop = ['pimCreatedAt', 'pimUpdatedAt','pimUniqueId', 'pimProductType','pimParentId']  # List the names of the columns you want to drop
 
         if include_variants and not self.pim_channel_api.group_by_parent:
             df_variant = df[df['pimProductType'] == 'VARIANT']
             df_solo = df[df['pimProductType'] == 'SOLO']
+            if exclude_pim_properties:
+                for col in columns_to_drop:
+                    if col in df_variant.columns:
+                        df_variant = df_variant.drop(col, axis=1)
+                    if col in df_solo.columns:
+                        df_solo = df_solo.drop(col, axis=1)
+            df_solo = df_solo.where(pd.notnull(df_solo), None)
+            df_variant = df_variant.where(pd.notnull(df_variant), None)
             final_list = df_variant.to_dict("records") + df_solo.to_dict("records")
             return final_list
 
         if include_variants and self.pim_channel_api.group_by_parent:
+            for col in columns_to_drop:
+                    if col in df.columns:
+                        df = df.drop(col, axis=1)
+            df = df.where(pd.notnull(df), None)
             final_list = df.to_dict('records')
             return final_list
 
+        
+        
         # Separate parent, variant, and solo products
         df_parent = df[df['pimProductType'] == 'PARENT']
         df_variant = df[df['pimProductType'] == 'VARIANT']
         df_solo = df[df['pimProductType'] == 'SOLO']
+
+        # Remove Nan
+        df_parent = df_parent.where(pd.notnull(df_parent), None)
+        df_variant = df_variant.where(pd.notnull(df_variant), None)
+        df_solo = df_solo.where(pd.notnull(df_solo), None)
+
+        
 
         grouped_variants = df_variant.groupby('pimParentId').apply(lambda x: x.to_dict('records')).reset_index()
         grouped_variants.columns = ['pimUniqueId', 'variants']
@@ -439,8 +461,18 @@ class ProductProcessor(object):
 
         merged_df['variants'] = merged_df['variants'].apply(lambda x: x if isinstance(x, list) else [])
 
-        parent_list = merged_df.to_dict('records')
+        if exclude_pim_properties:
+            for col in columns_to_drop:
+                    if col in merged_df.columns:
+                        merged_df = merged_df.drop(col, axis=1)
 
+        if exclude_pim_properties:
+            for col in columns_to_drop:
+                    if col in df_solo.columns:
+                        df_solo = df_solo.drop(col, axis=1)
+                        
+        
+        parent_list = merged_df.to_dict('records')
         final_list = parent_list + df_solo.to_dict('records')
 
         return final_list
@@ -466,7 +498,7 @@ class ProductProcessor(object):
 
         return df.to_dict("records")
 
-    def fetch_all_pim_products(self, include_variants=False):
+    def fetch_all_pim_products(self, include_variants=False, exclude_pim_properties=False):
         raw_products_list = []
         failed_product_list = []
         internal_file_download_link = ""
@@ -492,7 +524,7 @@ class ProductProcessor(object):
 
         try:
             if(internal_file_download_link):
-                raw_products_list = self.process_and_format_success_products(internal_file_download_link, include_variants)
+                raw_products_list = self.process_and_format_success_products(internal_file_download_link, include_variants, exclude_pim_properties)
         except Exception as e:
             print(e)
             print_exc()
@@ -529,7 +561,7 @@ class ProductProcessor(object):
 
         # return raw_products_list, failed_product_list
 
-    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False):
+    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False, exclude_pim_properties=False):
         self.processed_list = []
         self.failed_processed_products = []
         self.product_counter = 0
@@ -546,7 +578,7 @@ class ProductProcessor(object):
                 total_products = self.pim_channel_api.get()['data'].get('total', 0)
             if total_products > 0:
                 self.pim_channel_api.products_total = total_products
-                raw_products_list, failed_products_list = self.fetch_all_pim_products(include_variants)
+                raw_products_list, failed_products_list = self.fetch_all_pim_products(include_variants, exclude_pim_properties)
             else:
                 status = False
 
@@ -764,7 +796,7 @@ class ProductProcessor(object):
         self.pim_channel_api.update_export_status(data)
 
     def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="Template_Export.csv",
-                                add_parent_rows=False):
+                                add_parent_rows=False, exclude_pim_properties=False):
         counter = 1
         # transformer = Transformer(product_schema)
         tsv_products = list()
@@ -777,7 +809,7 @@ class ProductProcessor(object):
             # if add_parent_rows:
                 # self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True,
                 #                                      slice_id=None)
-            all_products_with_variants, failed_products_list = self.fetch_all_pim_products(include_variants=True)
+            all_products_with_variants, failed_products_list = self.fetch_all_pim_products(include_variants=True, exclude_pim_properties=exclude_pim_properties)
 
             failed_count = len(failed_products_list)
             if failed_count>0:
