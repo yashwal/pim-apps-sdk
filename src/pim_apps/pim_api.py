@@ -364,10 +364,10 @@ class ProductProcessor(object):
             print_exc()
             print(e)
 
-    def get_sorted_products_list(self, include_variants=False):
+    def get_sorted_products_list(self, include_variants=False, exclude_pim_properties=False):
         print("Sorted Product List")
         sorted_product = []
-        all_products, failed_products = self.fetch_all_pim_products(include_variants)
+        all_products, failed_products = self.fetch_all_pim_products(include_variants, exclude_pim_properties)
         if all_products and isinstance(all_products,list):
             sorted_product = sorted(all_products, key=lambda d: d.get('pimUniqueId',''))
         return sorted_product
@@ -553,7 +553,7 @@ class ProductProcessor(object):
 
         # return raw_products_list, failed_product_list
 
-    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False):
+    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False, exclude_pim_properties=False):
         self.processed_list = []
         self.failed_processed_products = []
         self.product_counter = 0
@@ -570,7 +570,7 @@ class ProductProcessor(object):
                 total_products = self.pim_channel_api.get()['data'].get('total', 0)
             if total_products > 0:
                 self.pim_channel_api.products_total = total_products
-                raw_products_list, failed_products_list = self.fetch_all_pim_products(include_variants)
+                raw_products_list, failed_products_list = self.fetch_all_pim_products(include_variants, exclude_pim_properties)
             else:
                 status = False
 
@@ -788,7 +788,7 @@ class ProductProcessor(object):
         self.pim_channel_api.update_export_status(data)
 
     def write_products_template(self, fixed_header, properties_schema=[], header=False, filename="Template_Export.csv",
-                                add_parent_rows=False):
+                                add_parent_rows=False, exclude_pim_properties=False):
         counter = 1
         # transformer = Transformer(product_schema)
         tsv_products = list()
@@ -801,7 +801,7 @@ class ProductProcessor(object):
             # if add_parent_rows:
                 # self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id, group_by_parent=True,
                 #                                      slice_id=None)
-            all_products_with_variants, failed_products_list = self.fetch_all_pim_products(include_variants=True)
+            all_products_with_variants, failed_products_list = self.fetch_all_pim_products(include_variants=True, exclude_pim_properties)
 
             failed_count = len(failed_products_list)
             if failed_count>0:
