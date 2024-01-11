@@ -416,9 +416,17 @@ class ProductProcessor(object):
 
     def process_and_format_success_products(self, products_link, include_variants=False):
         df = pd.read_json(products_link)
-        if include_variants:
+
+        if include_variants and not self.pim_channel_api.group_by_parent:
+            df_variant = df[df['pimProductType'] == 'VARIANT']
+            df_solo = df[df['pimProductType'] == 'SOLO']
+            final_list = df_variant.to_dict("records") + df_solo.to_dict("records")
+            return final_list
+
+        if include_variants and self.pim_channel_api.group_by_parent:
             final_list = df.to_dict('records')
             return final_list
+
         # Separate parent, variant, and solo products
         df_parent = df[df['pimProductType'] == 'PARENT']
         df_variant = df[df['pimProductType'] == 'VARIANT']
