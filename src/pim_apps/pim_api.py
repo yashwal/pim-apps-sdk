@@ -505,7 +505,7 @@ class ProductProcessor(object):
         internal_failed_file_download_link = ""
         count = 0
 
-        while not (internal_file_download_link or internal_failed_file_download_link) and count < 480:
+        while not (internal_file_download_link or internal_failed_file_download_link) and count < 1000:
             export_data = self.pim_channel_api.get_export_details()
             export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
 
