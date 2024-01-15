@@ -133,7 +133,7 @@ class PIMChannelAPI(object):
         if retry_count == 0:
             raise ValueError(message)
         else:
-            sleep(15)
+            time.sleep(15)
             self.get(count=count, page=page, type=type, scroll_id=scroll_id, retry_count=retry_count)
 
     def get(self, count=20, page=1, type="PAGINATION", scroll_id=None, retry_count=1):
