@@ -514,7 +514,7 @@ class ProductProcessor(object):
             internal_failed_file_download_link = export_details.get('internalPartnerExport', {}).get(
                 'internal_failed_file_download_links', {}).get("JSON", "")
 
-            sleep(15)
+            time.sleep(15)
             count = count+1
             print("Waiting for internal file to be generated....")
             print(f"Took {count*15} seconds...")
