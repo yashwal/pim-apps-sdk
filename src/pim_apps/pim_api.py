@@ -414,28 +414,36 @@ class ProductProcessor(object):
             self.failed_count += 1
             self.insert_product_status(pid=error_pid, status="FAILED", status_desc=f"{str(e)}")
 
+    def exclude_pim_properties(self, df):
+        columns_to_drop = ['pimCreatedAt', 'pimUpdatedAt','pimUniqueId', 'pimProductType','pimParentId']  # List the names of the columns you want to drop
+        for col in columns_to_drop:
+            if col in df.columns:
+                df = df.drop(col, axis=1)
+        return df
+
+    
     def process_and_format_success_products(self, products_link, include_variants=False, exclude_pim_properties=False):
         df = pd.read_json(products_link)
-        columns_to_drop = ['pimCreatedAt', 'pimUpdatedAt','pimUniqueId', 'pimProductType','pimParentId']  # List the names of the columns you want to drop
 
-        if include_variants and not self.pim_channel_api.group_by_parent:
+        # If group_by_parent is FALSE, then only VARIANT and SOLO products will be sent as siblings
+        if not self.pim_channel_api.group_by_parent:
             df_variant = df[df['pimProductType'] == 'VARIANT']
             df_solo = df[df['pimProductType'] == 'SOLO']
+            
             if exclude_pim_properties:
-                for col in columns_to_drop:
-                    if col in df_variant.columns:
-                        df_variant = df_variant.drop(col, axis=1)
-                    if col in df_solo.columns:
-                        df_solo = df_solo.drop(col, axis=1)
+                df_variant = self.exclude_pim_properties(df_variant)
+                df_solo = self.exclude_pim_properties(df_solo)
+                
             df_solo = df_solo.where(pd.notnull(df_solo), None)
             df_variant = df_variant.where(pd.notnull(df_variant), None)
             final_list = df_variant.to_dict("records") + df_solo.to_dict("records")
             return final_list
 
-        if include_variants and self.pim_channel_api.group_by_parent:
-            for col in columns_to_drop:
-                    if col in df.columns:
-                        df = df.drop(col, axis=1)
+        # If include_variants is TRUE, then PARENT, VARIANT and SOLO will be sent and PARENT wont have VARIANT in it
+        if include_variants:
+            if exclude_pim_properties:
+                df = self.exclude_pim_properties(df)
+                
             df = df.where(pd.notnull(df), None)
             final_list = df.to_dict('records')
             return final_list
@@ -453,24 +461,21 @@ class ProductProcessor(object):
         df_solo = df_solo.where(pd.notnull(df_solo), None)
 
         
-
+        # If include_variants are FALSE, group_by_parent is TRUE and  exclude_pim_properties is TRUE
+        # then, the variant product inside the parent product wouls still have the pim properties
+        # please handle this inside the job code
+        # in this case, PRENT products will have their VARIANTS inside them in "variants" column. This will also include SOLO products
+        
         grouped_variants = df_variant.groupby('pimParentId').apply(lambda x: x.to_dict('records')).reset_index()
         grouped_variants.columns = ['pimUniqueId', 'variants']
 
         merged_df = pd.merge(df_parent, grouped_variants, on='pimUniqueId', how='left')
 
         merged_df['variants'] = merged_df['variants'].apply(lambda x: x if isinstance(x, list) else [])
-
+    
         if exclude_pim_properties:
-            for col in columns_to_drop:
-                    if col in merged_df.columns:
-                        merged_df = merged_df.drop(col, axis=1)
-
-        if exclude_pim_properties:
-            for col in columns_to_drop:
-                    if col in df_solo.columns:
-                        df_solo = df_solo.drop(col, axis=1)
-                        
+            merged_df = self.exclude_pim_properties(merged_df)
+            df_solo = self.exclude_pim_properties(df_solo)                
         
         parent_list = merged_df.to_dict('records')
         final_list = parent_list + df_solo.to_dict('records')
@@ -505,7 +510,7 @@ class ProductProcessor(object):
         internal_failed_file_download_link = ""
         count = 0
 
-        while not (internal_file_download_link or internal_failed_file_download_link) and count < 480:
+        while not (internal_file_download_link or internal_failed_file_download_link) and count < 3600:
             export_data = self.pim_channel_api.get_export_details()
             export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
 
@@ -513,11 +518,12 @@ class ProductProcessor(object):
                 'internal_file_download_links', {}).get("JSON", "")
             internal_failed_file_download_link = export_details.get('internalPartnerExport', {}).get(
                 'internal_failed_file_download_links', {}).get("JSON", "")
-
-            time.sleep(15)
-            count = count+1
-            print("Waiting for internal file to be generated....")
-            print(f"Took {count*15} seconds...")
+            
+            if not (internal_file_download_link or internal_failed_file_download_link):
+                time.sleep(10)
+                count = count+1
+                print("Waiting for internal file to be generated....")
+                print(f"Took {count*10} seconds...")
 
 
         # export_with_readiness = export_details.get("check_readiness", False)
