@@ -525,8 +525,9 @@ class ProductProcessor(object):
         internal_file_download_link = ""
         internal_failed_file_download_link = ""
         count = 0
+        internal_export_status = ""
 
-        while not (internal_file_download_link or internal_failed_file_download_link) and count < 3600:
+        while not (internal_file_download_link or internal_failed_file_download_link) and count < 3600 and internal_export_status != "FAILED":
             export_data = self.pim_channel_api.get_export_details()
             export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
 
@@ -534,6 +535,8 @@ class ProductProcessor(object):
                 'internal_file_download_links', {}).get("JSON", "")
             internal_failed_file_download_link = export_details.get('internalPartnerExport', {}).get(
                 'internal_failed_file_download_links', {}).get("JSON", "")
+            internal_export_status = export_details.get('internalPartnerExport', {}).get(
+                'internal_export_status', "")
             
             if not (internal_file_download_link or internal_failed_file_download_link):
                 time.sleep(10)
