@@ -535,6 +535,7 @@ class ProductProcessor(object):
                 'internal_file_download_links', {}).get("JSON", "")
             internal_failed_file_download_link = export_details.get('internalPartnerExport', {}).get(
                 'internal_failed_file_download_links', {}).get("JSON", "")
+            
             internal_export_status = export_details.get('internalPartnerExport', {}).get(
                 'internal_export_status', "")
             
@@ -543,7 +544,6 @@ class ProductProcessor(object):
                 count = count+1
                 print("Waiting for internal file to be generated....")
                 print(f"Took {count*10} seconds...")
-
 
         # export_with_readiness = export_details.get("check_readiness", False)
 
