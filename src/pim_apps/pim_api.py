@@ -339,7 +339,11 @@ class ProductProcessor(object):
         export_data = self.pim_channel_api.get_export_details()
         export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
         group_by_parent = export_details.get('product_listing_type', False)
-        self.pim_channel_api.group_by_parent = True if group_by_parent == "GROUP_BY_PARENT" else False
+        force_export_parent = export_details.get('channel_params',{}).get('force_export_parent')
+        if force_export_parent == "true":
+            self.pim_channel_api.group_by_parent = True
+        else:
+            self.pim_channel_api.group_by_parent = True if group_by_parent == "GROUP_BY_PARENT" else False
         # self.raw_products_list = []
         self.product_status_instance = ProductStatus(self.task_id)
         self.failed_processed_products = []
