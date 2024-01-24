@@ -440,7 +440,11 @@ class ProductProcessor(object):
                     df_solo = self.exclude_pim_properties(df_solo)
                     
                 df_solo = df_solo.where(pd.notnull(df_solo), None)
+                df_solo.fillna('',inplace=True)
+                
                 df_variant = df_variant.where(pd.notnull(df_variant), None)
+                df_variant.fillna('',inplace=True)
+                
                 final_list = df_variant.to_dict("records") + df_solo.to_dict("records")
                 return final_list
     
@@ -462,8 +466,11 @@ class ProductProcessor(object):
     
             # Remove Nan
             df_parent = df_parent.where(pd.notnull(df_parent), None)
+            df_parent.fillna('',inplace=True)
             df_variant = df_variant.where(pd.notnull(df_variant), None)
+            df_variant.fillna('',inplace=True)
             df_solo = df_solo.where(pd.notnull(df_solo), None)
+            df_solo.fillna('',inplace=True)
     
             
             # If include_variants are FALSE, group_by_parent is TRUE and  exclude_pim_properties is TRUE
