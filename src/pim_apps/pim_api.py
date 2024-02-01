@@ -686,9 +686,11 @@ class ProductProcessor(object):
 
 
         total = self.pim_channel_api.products_total or 0
-        if status in ["PRODUCTS_FAILED", "EXPORTED", "FAILED"] and failed_count and success_count:
-            failed_count += self.failed_count
-            total = failed_count + success_count
+        # TODO
+        # Need to check this logic
+        # if status in ["PRODUCTS_FAILED", "EXPORTED", "FAILED"] and failed_count and success_count:
+        #     failed_count += self.failed_count
+        #     total = failed_count + success_count
         if (success_count and success_count > 0) or (failed_count and failed_count > 0):
             data["export_stats"] = {}
             if total and total > 0:
