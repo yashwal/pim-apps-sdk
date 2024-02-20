@@ -378,6 +378,7 @@ class ProductProcessor(object):
         # print(f"Processing product no {counter}")
         try:
             if product is not None:
+                print("CURRENT PRODUCT : ", product)
                 pid = product.get("pimUniqueId") or product.get("id") or random.randint(100, 9999)
 
                 # TODO
