@@ -593,6 +593,53 @@ class ProductProcessor(object):
 
         # return raw_products_list, failed_product_list
 
+    def fetch_raw_products_file(self, include_variants=False, exclude_pim_properties=False):
+        raw_products_list = []
+        failed_product_list = []
+        internal_file_download_link = ""
+        internal_failed_file_download_link = ""
+        count = 0
+        internal_export_status = ""
+
+        while not (
+                internal_file_download_link or internal_failed_file_download_link) and count < 3600 and internal_export_status != "FAILED":
+            export_data = self.pim_channel_api.get_export_details()
+            export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
+
+            internal_file_download_link = export_details.get('internalPartnerExport', {}).get(
+                'internal_file_download_links', {}).get("JSON", "")
+            internal_failed_file_download_link = export_details.get('internalPartnerExport', {}).get(
+                'internal_failed_file_download_links', {}).get("JSON", "")
+
+            internal_export_status = export_details.get('internalPartnerExport', {}).get(
+                'internal_export_status', "")
+
+            if not (internal_file_download_link or internal_failed_file_download_link):
+                time.sleep(10)
+                count = count + 1
+                print("Waiting for internal file to be generated....")
+                print(f"Took {count * 10} seconds...")
+
+        # export_with_readiness = export_details.get("check_readiness", False)
+
+        try:
+            if (internal_file_download_link):
+                internal_success_file = internal_file_download_link
+        except Exception as e:
+            print(e)
+            print_exc()
+
+        try:
+            if (internal_failed_file_download_link):
+                internal_failed_file = internal_failed_file_download_link
+                failed_file_df = pd.read_json(internal_failed_file_download_link)
+                failed_product_list = self.process_and_send_errors(failed_file_df)
+        except Exception as e:
+            print(e)
+            print_exc()
+
+        return internal_success_file, internal_failed_file
+
     def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False, exclude_pim_properties=False):
         self.processed_list = []
         self.failed_processed_products = []
