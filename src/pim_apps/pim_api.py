@@ -424,7 +424,15 @@ class ProductProcessor(object):
     
     def process_and_format_success_products(self, products_link, include_variants=False, exclude_pim_properties=False):
         try:
-            df = pd.read_json(products_link, convert_axes=False)
+            try:
+                response = requests.get(products_link)
+                json_data = response.json()
+                df = pd.DataFrame(json_data)
+                # df = pd.read_json(products_link)
+            except Exception as e:
+                print(e)
+                print_exc()
+                df = pd.DataFrame()
             
             if df.empty:
                 # If empty, return an empty list
