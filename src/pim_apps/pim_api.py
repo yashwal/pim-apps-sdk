@@ -424,7 +424,7 @@ class ProductProcessor(object):
     
     def process_and_format_success_products(self, products_link, include_variants=False, exclude_pim_properties=False):
         try:
-            df = pd.read_json(products_link)
+            df = pd.read_json(products_link, convert_axes=False)
             
             if df.empty:
                 # If empty, return an empty list
