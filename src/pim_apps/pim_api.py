@@ -608,6 +608,8 @@ class ProductProcessor(object):
         internal_failed_file_download_link = ""
         count = 0
         internal_export_status = ""
+        internal_success_file = ""
+        internal_failed_file = ""
 
         while not (
                 internal_file_download_link or internal_failed_file_download_link) and count < 3600 and internal_export_status != "FAILED":
