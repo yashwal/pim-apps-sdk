@@ -331,7 +331,8 @@ class PIMChannelAPI(object):
             "count": count
         })
         headers = {
-            'Authorization': f'{self.api_key}'
+            'Authorization': f'{self.api_key}',
+            'Content-Type': 'application/json'
         }
         response = requests.request("POST", url, headers=headers, data=payload)
         data = response.json()
