@@ -463,7 +463,9 @@ class ProductProcessor(object):
                 json_data = response.json()
                 df = pd.DataFrame(json_data)
                 valid_columns = [col for col in sorted_property_name if col in df.columns]
-                df = df[valid_columns]
+                additional_columns = [col for col in df.columns if col not in valid_columns]
+                final_columns = valid_columns + additional_columns
+                df = df[final_columns]
                 # df = pd.read_json(products_link)
             except Exception as e:
                 print(e)
