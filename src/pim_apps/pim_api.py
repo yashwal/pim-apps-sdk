@@ -324,6 +324,19 @@ class PIMChannelAPI(object):
 
         return json.loads(response.text)
 
+    def get_property_mappings(self, adapter_id, page=1, count=500):
+        url = f"{get_pim_app_domain()}v1/channelAdapter/{adapter_id}/properties"
+        payload = json.dumps({
+            "page": page,
+            "count": count
+        })
+        headers = {
+            'Authorization': f'{self.api_key}',
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("POST", url, headers=headers, data=payload)
+        data = response.json()
+        return data
 
 
 class ProductProcessor(object):
@@ -336,8 +349,8 @@ class ProductProcessor(object):
 
 
         self.pim_channel_api = PIMChannelAPI(self.api_key, self.reference_id)
-        export_data = self.pim_channel_api.get_export_details()
-        export_details = export_data.get("data", {}).get("metaInfo", {}).get("export", {})
+        self.export_data = self.pim_channel_api.get_export_details()
+        export_details = self.export_data.get("data", {}).get("metaInfo", {}).get("export", {})
         group_by_parent = export_details.get('product_listing_type', False)
         self.pim_channel_api.group_by_parent = True if group_by_parent == "GROUP_BY_PARENT" else False
         # self.raw_products_list = []
@@ -421,11 +434,46 @@ class ProductProcessor(object):
                 df = df.drop(col, axis=1)
         return df
 
+    def get_property_index(self):
+        adapter_id = self.export_data.get("data", {}).get("metaInfo", {}).get("adapter", {}).get('adapterId', None)
+        properties = []
+        if adapter_id is not None:
+            current_prop = self.pim_channel_api.get_property_mappings(adapter_id, page=1)
+            total_pages = current_prop.get("data", {}).get("page", None)
+            entries = current_prop.get("data", {}).get("entries", [])
+            properties.extend(entries)
+            if total_pages and total_pages > 1:
+                current_page = 2
+                while (current_page <= total_pages):
+                    current_prop = self.pim_channel_api.get_property_mappings(adapter_id, page=current_page)
+                    entries = current_prop.get("data", {}).get("entries", [])
+                    properties.extend(entries)
+                    current_page += 1
+
+
+        sorted_properties = sorted(properties, key=lambda x: x['index_pos'])
+        sorted_property_names = [prop['property_name'] for prop in sorted_properties]
+        return sorted_property_names
     
     def process_and_format_success_products(self, products_link, include_variants=False, exclude_pim_properties=False):
         try:
-            df = pd.read_json(products_link)
-            
+            sorted_property_name = self.get_property_index()
+
+            try:
+                response = requests.get(products_link)
+                json_data = response.json()
+                df = pd.DataFrame(json_data)
+                valid_columns = [col for col in sorted_property_name if col in df.columns]
+                additional_columns = [col for col in df.columns if col not in valid_columns]
+                final_columns = valid_columns + additional_columns
+                df = df[final_columns]
+                # df = pd.read_json(products_link)
+            except Exception as e:
+                print(e)
+                print_exc()
+                df = pd.DataFrame()
+
+
             if df.empty:
                 # If empty, return an empty list
                 return []
