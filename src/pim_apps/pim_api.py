@@ -540,7 +540,7 @@ class ProductProcessor(object):
                 df_solo = self.exclude_pim_properties(df_solo)                
             
             parent_list = merged_df.to_dict('records')
-            final_list = parent_list + df_solo.to_dict('records')
+            final_list = parent_list + df_solo.to_dict('records') + df_variant.to_dict('records')
     
             return final_list
         except Exception as e:
