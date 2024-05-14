@@ -244,8 +244,9 @@ class ProductStatus(object):
         response = requests.request("GET", url, headers=headers)
 
         data = response.json()
-
-        return data.get("data", {})
+        if data:
+            return data.get("data", {})
+        return {}
 
     def post(self, data):
         try:
