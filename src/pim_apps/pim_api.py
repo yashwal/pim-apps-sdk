@@ -451,7 +451,7 @@ class ProductProcessor(object):
                     current_page += 1
 
 
-        sorted_properties = sorted(properties, key=lambda x: x['index_pos'])
+        sorted_properties = sorted(properties, key=lambda x: x.get('index_pos', float('inf')))
         sorted_property_names = [prop['property_name'] for prop in sorted_properties]
         return sorted_property_names
     
