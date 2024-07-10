@@ -462,6 +462,7 @@ class ProductProcessor(object):
 
             try:
                 response = requests.get(products_link)
+                response.encoding = 'utf-8'
                 json_data = response.json()
                 df = pd.DataFrame(json_data)
                 valid_columns = [col for col in sorted_property_name if col in df.columns]
