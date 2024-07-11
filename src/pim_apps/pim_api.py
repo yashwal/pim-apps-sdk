@@ -426,6 +426,7 @@ class ProductProcessor(object):
         try:
             try:
                 response = requests.get(products_link)
+                response.encoding = 'utf-8'
                 json_data = response.json()
                 df = pd.DataFrame(json_data)
                 # df = pd.read_json(products_link)
