@@ -438,7 +438,14 @@ def add_prefix_to_headers(file_path, prefix):
         elif file_extension == 'json':
             with open(file_path, 'r') as f:
                 data = json.load(f)
-            modified_data = {prefix + key: value for key, value in data.items()}
+            if isinstance(data, dict):
+                modified_data = {prefix + key: value for key, value in data.items()}
+            elif isinstance(data, list):
+                modified_data = [
+                    {prefix + key: value for key, value in item.items()} if isinstance(item, dict) else item for item in
+                    data]
+            else:
+                raise ValueError("Unsupported JSON structure")
             with open(modified_file_path, 'w') as f:
                 json.dump(modified_data, f, indent=4)
 
