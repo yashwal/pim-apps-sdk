@@ -422,7 +422,7 @@ def add_prefix_to_headers(file_path, prefix):
     file_url = ""
     try:
         file_extension = file_path.split('.')[-1]
-        modified_file_path = f"prefixed_{file_path}"
+        modified_file_path = f"prefixed_{file_path.split('/')[-1]}"
 
         if file_extension in ['csv', 'tsv']:
             delimiter = ',' if file_extension == 'csv' else '\t'
