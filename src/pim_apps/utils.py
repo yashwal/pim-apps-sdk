@@ -458,7 +458,7 @@ def add_prefix_to_headers(file_path, prefix):
         print_exc()
     return file_url
 
-def convert_variant_to_solo(products_list, product_id_key="id", parent_id_key="parent_id"):
+def inherit_parent_to_variant(products_list, product_id_key="id", parent_id_key="parent_id"):
     prod_data = {product[product_id_key]: product for product in products_list if product_id_key in product}
     final_list = []
 
