@@ -6,6 +6,8 @@ import zipfile
 import requests
 import pandas as pd
 import boto3
+from traceback import print_exc
+from botocore.exceptions import ClientError
 
 os.environ['A2C_BASE_URL'] = "https://api.api2cart.com/"
 
@@ -414,3 +416,59 @@ def import_hook(api_key, file_url, reference_id=None, template_id=None):
     print(response.text)
 
     return json.loads(response.text)
+
+def add_prefix_to_headers(file_path, prefix):
+    file_url = ""
+    try:
+        file_extension = file_path.split('.')[-1]
+        modified_file_path = f"prefixed_{file_path.split('/')[-1]}"
+
+        if file_extension in ['csv', 'tsv']:
+            delimiter = ',' if file_extension == 'csv' else '\t'
+            df = pd.read_csv(file_path, delimiter=delimiter)
+            df.columns = [prefix + col for col in df.columns]
+            df.to_csv(modified_file_path, index=False, sep=delimiter)
+
+        elif file_extension in ['xlsx', 'xlsm', 'xls']:
+            df = pd.read_excel(file_path)
+            df.columns = [prefix + col for col in df.columns]
+            df.to_excel(modified_file_path, index=False)
+
+        elif file_extension == 'json':
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                modified_data = {prefix + key: value for key, value in data.items()}
+            elif isinstance(data, list):
+                modified_data = [
+                    {prefix + key: value for key, value in item.items()} if isinstance(item, dict) else item for item in
+                    data]
+            else:
+                raise ValueError("Unsupported JSON structure")
+            with open(modified_file_path, 'w') as f:
+                json.dump(modified_data, f, indent=4)
+
+        else:
+            raise ValueError("Unsupported file format")
+
+        file_url = upload_to_s3(modified_file_path)
+        os.remove(modified_file_path)
+    except Exception as e:
+        print(e)
+        print_exc()
+    return file_url
+
+def inherit_parent_to_variant(products_list, product_id_key="id", parent_id_key="parent_id"):
+    prod_data = {product[product_id_key]: product for product in products_list if product_id_key in product}
+    final_list = []
+
+    for product in products_list:
+        parent_id = product.get(parent_id_key, None)
+        if parent_id and parent_id in prod_data:
+            combined_product = prod_data[parent_id].copy()
+            combined_product.update(product)
+            final_list.append(combined_product)
+        else:
+            final_list.append(product)
+
+    return final_list
