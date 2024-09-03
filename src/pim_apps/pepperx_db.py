@@ -172,7 +172,7 @@ class AppUserPIM(object):
 class ProductStatus(object):
     def __init__(self, task_id):
         self.task_id = task_id
-        # self.product_trassaction_buffer = []
+        self.task_result_id = self.get_task_result_id()
 
     def post_started_message(self, product_id=""):
         self.success_msg = []
@@ -232,11 +232,26 @@ class ProductStatus(object):
     #         print(e)
     #         print_exc()
 
+    def get(self, product_id):
+        url = f"{get_pepperx_domain()}api/v2/product/transaction?task_id={self.task_id}&product_id={product_id}&task_result_id={self.task_result_id}"
+
+        headers = {
+            'accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+
+        response = requests.request("GET", url, headers=headers)
+
+        data = response.json()
+
+        return data.get("data", {})
+
     def post(self, data):
         try:
-            url = f"{get_pepperx_domain()}api/v1/task/product/transaction"
+            url = f"{get_pepperx_domain()}api/v2/task/product/transaction"
 
-            data["task_result_id"] = self.task_id
+            data["task_result_id"] = self.task_result_id
+            data["task_id"] = self.task_id
             payload = json.dumps(data)
 
             headers = {
@@ -291,5 +306,18 @@ class ProductStatus(object):
 
         return data
 
-
-
+    def get_task_result_id(self):
+        url = f"{get_pepperx_domain()}api/v1/task/task_result_id/{self.task_id}"
+        headers = {
+            'accept': 'application/json'
+        }
+        try:
+            response = requests.request("GET", url, headers=headers)
+            response.raise_for_status()  # Raises an HTTPError for bad responses
+            resp = response.json()
+            if resp:
+                return str(resp.get("id", ""))
+            return ""
+        except requests.RequestException as e:
+            print(f"An error occurred: {e}")
+            return ""
