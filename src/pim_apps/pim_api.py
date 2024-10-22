@@ -387,7 +387,7 @@ class ProductProcessor(object):
 
     # 1. Pulls products and variants from PIM
 
-    def process_pim_product(self, product, process_product, smart_retry):
+    def process_pim_product(self, product, process_product, smart_retry, retry_failed):
         # print(f"Processing product no {counter}")
         try:
             if product is not None:
@@ -401,7 +401,14 @@ class ProductProcessor(object):
                 # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
 
                 task_product_status = self.product_status_instance.get(product.get("pimUniqueId"))
-                if smart_retry:
+                if retry_failed:
+                    status = task_product_status.get("type", "")
+                    if status == "FAILED":
+                        proccessed_product, status = process_product(product, self.product_counter)
+                    else:
+                        proccessed_product = product
+
+                elif smart_retry:
                     if len(task_product_status.keys()) == 0:
                         proccessed_product, status = process_product(product, self.product_counter)
                     else:
@@ -643,7 +650,7 @@ class ProductProcessor(object):
 
         # return raw_products_list, failed_product_list
 
-    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False, exclude_pim_properties=False, smart_retry=True):
+    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False, exclude_pim_properties=False, smart_retry=True, retry_failed=False):
         self.processed_list = []
         self.failed_processed_products = []
         self.product_counter = 0
@@ -685,10 +692,10 @@ class ProductProcessor(object):
                 if multiThread:
                     with concurrent.futures.ThreadPoolExecutor() as executor:
                         for product in raw_products_list:
-                            executor.submit(self.process_pim_product, product, process_product, smart_retry)
+                            executor.submit(self.process_pim_product, product, process_product, smart_retry, retry_failed)
                 else:
                     for product in raw_products_list:
-                        self.process_pim_product(product, process_product, smart_retry)
+                        self.process_pim_product(product, process_product, smart_retry, retry_failed)
             else:
                 self.update_export_status(status="PRODUCTS_FAILED", success_count=self.success_count,
                                           failed_count=self.failed_count)
