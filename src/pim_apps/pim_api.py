@@ -387,7 +387,7 @@ class ProductProcessor(object):
 
     # 1. Pulls products and variants from PIM
 
-    def process_pim_product(self, product, process_product, smart_retry, retry_failed):
+    def process_pim_product(self, product, process_product, smart_retry, retry_failed=False):
         # print(f"Processing product no {counter}")
         try:
             if product is not None:
