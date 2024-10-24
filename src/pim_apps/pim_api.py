@@ -391,7 +391,7 @@ class ProductProcessor(object):
         # print(f"Processing product no {counter}")
         try:
             if product is not None:
-                pid = product.get("id") or random.randint(100, 9999)
+                pid = product.get("pimUniqueId") or random.randint(100, 9999)
 
                 # TODO
                 # Check if the task ID and product ID entry is there in the product transaction table
