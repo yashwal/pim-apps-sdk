@@ -472,6 +472,8 @@ class ProductProcessor(object):
                 response.encoding = 'utf-8'
                 json_data = response.json()
                 df = pd.DataFrame(json_data)
+                del json_data
+                del response
                 valid_columns = [col for col in sorted_property_name if col in df.columns]
                 additional_columns = [col for col in df.columns if col not in valid_columns]
                 final_columns = valid_columns + additional_columns
@@ -503,6 +505,8 @@ class ProductProcessor(object):
                 df_variant.fillna('',inplace=True)
                 
                 final_list = df_variant.to_dict("records") + df_solo.to_dict("records")
+                del df_variant
+                del df_solo
                 return final_list
     
             # If include_variants is TRUE, then PARENT, VARIANT and SOLO will be sent and PARENT wont have VARIANT in it
@@ -512,6 +516,7 @@ class ProductProcessor(object):
                     
                 df = df.where(pd.notnull(df), None)
                 final_list = df.to_dict('records')
+                del df
                 return final_list
     
             
@@ -550,7 +555,12 @@ class ProductProcessor(object):
             
             parent_list = merged_df.to_dict('records')
             final_list = parent_list + df_solo.to_dict('records')
-    
+            del df_solo
+            del parent_list
+            del merged_df
+            del df_variant
+            del df_parent
+
             return final_list
         except Exception as e:
             print(e)
