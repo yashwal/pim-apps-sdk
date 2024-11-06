@@ -488,7 +488,7 @@ class ProductProcessor(object):
 
         return raw_products_list, failed_product_list
 
-    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, exclude_pim_properties=False, smart_retry=True, retry_failed=False):
+    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False, smart_retry=True, retry_failed=False):
         self.processed_list = []
         self.failed_processed_products = []
         self.product_counter = 0
