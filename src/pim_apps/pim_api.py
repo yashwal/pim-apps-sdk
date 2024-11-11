@@ -395,16 +395,19 @@ class ProductProcessor(object):
                         proccessed_product, status = process_product(product, self.product_counter)
                     else:
                         proccessed_product = product
+                        if status == "COMPLETE":
+                            status = "SUCCESS"
                 elif smart_retry:
                     if len(task_product_status.keys()) == 0:
                         proccessed_product, status = process_product(product, self.product_counter)
+                    else:
+                        print(f"Skipped the process product for products --- {pid}")
+                        proccessed_product = product
+                        status = task_product_status.get("type", "")
+                        if status == "COMPLETE":
+                            status = "SUCCESS"
                 else:
-                    print(f"Skipped the process product for products --- {pid}")
-                    proccessed_product = product
-                    status = task_product_status.get("type", "")
-                    if status == "COMPLETE":
-                        status = "SUCCESS"
-
+                    proccessed_product, status = process_product(product, self.product_counter)
                 self.product_counter += 1
                 if status == "SUCCESS":
                     self.success_count += 1
