@@ -407,6 +407,8 @@ class ProductProcessor(object):
                         proccessed_product, status = process_product(product, self.product_counter)
                     else:
                         proccessed_product = product
+                        if status == "COMPLETE":
+                            status = "SUCCESS"
 
                 elif smart_retry:
                     if len(task_product_status.keys()) == 0:
