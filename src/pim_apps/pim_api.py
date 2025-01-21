@@ -579,10 +579,10 @@ class ProductProcessor(object):
                     error_messages.append(str(row['pimValidationErrors']))
     
                 if 'pimPostTransformerErrors' in row and pd.notna(row['pimPostTransformerErrors']):
-                    error_messages.append(str(row['pimValidationErrors']))
+                    error_messages.append(str(row['pimPostTransformerErrors']))
     
                 if 'pimTransformationErrors' in row and pd.notna(row['pimTransformationErrors']):
-                    error_messages.append(str(row['pimValidationErrors']))
+                    error_messages.append(str(row['pimTransformationErrors']))
     
                 full_error_message = '|'.join(error_messages)
     
