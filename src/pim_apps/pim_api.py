@@ -510,33 +510,51 @@ class ProductProcessor(object):
                 del df_variant
                 del df_solo
                 return final_list
-    
-            # If include_variants is TRUE, then PARENT, VARIANT and SOLO will be sent and PARENT wont have VARIANT in it
-            if include_variants:
-                if exclude_pim_properties:
-                    df = self.exclude_pim_properties(df)
-                    
-                df = df.where(pd.notnull(df), None)
-                final_list = df.to_dict('records')
-                del df
-                return final_list
-    
-            
-            
+
             # Separate parent, variant, and solo products
             df_parent = df[df['pimProductType'] == 'PARENT']
             df_variant = df[df['pimProductType'] == 'VARIANT']
             df_solo = df[df['pimProductType'] == 'SOLO']
-    
+
             # Remove Nan
             df_parent = df_parent.where(pd.notnull(df_parent), None)
-            df_parent.fillna('',inplace=True)
+            df_parent.fillna('', inplace=True)
             df_variant = df_variant.where(pd.notnull(df_variant), None)
-            df_variant.fillna('',inplace=True)
+            df_variant.fillna('', inplace=True)
             df_solo = df_solo.where(pd.notnull(df_solo), None)
-            df_solo.fillna('',inplace=True)
-    
-            
+            df_solo.fillna('', inplace=True)
+
+            # If include_variants is TRUE, then PARENT, VARIANT and SOLO will be sent and PARENT wont have VARIANT in it. VARIANTS will be followed by its PARENT
+            if include_variants:
+                # Ensure required columns exist before filtering
+                required_columns = {'pimProductType', 'pimUniqueId', 'pimParentId'}
+                missing_columns = required_columns - set(df.columns)
+
+                if missing_columns:
+                    print(f"Missing required columns: {missing_columns}")
+                    return []
+
+                # Convert DataFrames to lists
+                solo_list = df_solo.to_dict('records')
+                parent_list = df_parent.to_dict('records')
+                variant_list = df_variant.to_dict('records')
+
+                # Ensure unique ID columns exist in variants before processing
+                variant_mapping = {v['pimParentId']: [] for v in variant_list if 'pimParentId' in v}
+                for v in variant_list:
+                    if v.get('pimParentId'):
+                        variant_mapping[v['pimParentId']].append(v)
+
+                # Final list: SOLO products first, then each PARENT followed by its VARIANTS
+                final_list = solo_list + [
+                    item for parent in parent_list for item in
+                    ([parent] + variant_mapping.get(parent.get('pimUniqueId'), []))
+                ]
+
+                del df_solo, df_parent, df_variant
+                return final_list
+
+
             # If include_variants are FALSE, group_by_parent is TRUE and  exclude_pim_properties is TRUE
             # then, the variant product inside the parent product wouls still have the pim properties
             # please handle this inside the job code
