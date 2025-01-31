@@ -387,11 +387,11 @@ class ProductProcessor(object):
 
     # 1. Pulls products and variants from PIM
 
-    def process_pim_product(self, product, process_product, smart_retry):
+    def process_pim_product(self, product, process_product, smart_retry, retry_failed=False):
         # print(f"Processing product no {counter}")
         try:
             if product is not None:
-                pid = product.get("id") or random.randint(100, 9999)
+                pid = product.get("pimUniqueId") or random.randint(100, 9999)
 
                 # TODO
                 # Check if the task ID and product ID entry is there in the product transaction table
@@ -401,7 +401,16 @@ class ProductProcessor(object):
                 # self.insert_product_status(pid,"STARTED" , f"Product processing started for {pid}")
 
                 task_product_status = self.product_status_instance.get(product.get("pimUniqueId"))
-                if smart_retry:
+                if retry_failed:
+                    status = task_product_status.get("type", "")
+                    if status == "FAILED":
+                        proccessed_product, status = process_product(product, self.product_counter)
+                    else:
+                        proccessed_product = product
+                        if status == "COMPLETE":
+                            status = "SUCCESS"
+
+                elif smart_retry:
                     if len(task_product_status.keys()) == 0:
                         proccessed_product, status = process_product(product, self.product_counter)
                     else:
@@ -465,6 +474,8 @@ class ProductProcessor(object):
                 response.encoding = 'utf-8'
                 json_data = response.json()
                 df = pd.DataFrame(json_data)
+                del json_data
+                del response
                 valid_columns = [col for col in sorted_property_name if col in df.columns]
                 additional_columns = [col for col in df.columns if col not in valid_columns]
                 final_columns = valid_columns + additional_columns
@@ -496,6 +507,8 @@ class ProductProcessor(object):
                 df_variant.fillna('',inplace=True)
                 
                 final_list = df_variant.to_dict("records") + df_solo.to_dict("records")
+                del df_variant
+                del df_solo
                 return final_list
     
             # If include_variants is TRUE, then PARENT, VARIANT and SOLO will be sent and PARENT wont have VARIANT in it
@@ -505,6 +518,7 @@ class ProductProcessor(object):
                     
                 df = df.where(pd.notnull(df), None)
                 final_list = df.to_dict('records')
+                del df
                 return final_list
     
             
@@ -543,7 +557,12 @@ class ProductProcessor(object):
             
             parent_list = merged_df.to_dict('records')
             final_list = parent_list + df_solo.to_dict('records')
-    
+            del df_solo
+            del parent_list
+            del merged_df
+            del df_variant
+            del df_parent
+
             return final_list
         except Exception as e:
             print(e)
@@ -560,10 +579,10 @@ class ProductProcessor(object):
                     error_messages.append(str(row['pimValidationErrors']))
     
                 if 'pimPostTransformerErrors' in row and pd.notna(row['pimPostTransformerErrors']):
-                    error_messages.append(str(row['pimValidationErrors']))
+                    error_messages.append(str(row['pimPostTransformerErrors']))
     
                 if 'pimTransformationErrors' in row and pd.notna(row['pimTransformationErrors']):
-                    error_messages.append(str(row['pimValidationErrors']))
+                    error_messages.append(str(row['pimTransformationErrors']))
                     
                 if 'pimCoercionErrors' in row and pd.notna(row['pimCoercionErrors']):
                     error_messages.append(str(row['pimCoercionErrors']))
@@ -646,7 +665,7 @@ class ProductProcessor(object):
 
         # return raw_products_list, failed_product_list
 
-    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False, exclude_pim_properties=False, smart_retry=True):
+    def iterate_products(self, process_product, auto_finish=True, multiThread=True, include_variants=False, update_product_count = True, export_with_readiness=False, exclude_pim_properties=False, smart_retry=True, retry_failed=False):
         self.processed_list = []
         self.failed_processed_products = []
         self.product_counter = 0
@@ -688,10 +707,10 @@ class ProductProcessor(object):
                 if multiThread:
                     with concurrent.futures.ThreadPoolExecutor() as executor:
                         for product in raw_products_list:
-                            executor.submit(self.process_pim_product, product, process_product, smart_retry)
+                            executor.submit(self.process_pim_product, product, process_product, smart_retry, retry_failed)
                 else:
                     for product in raw_products_list:
-                        self.process_pim_product(product, process_product, smart_retry)
+                        self.process_pim_product(product, process_product, smart_retry, retry_failed)
             else:
                 self.update_export_status(status="PRODUCTS_FAILED", success_count=self.success_count,
                                           failed_count=self.failed_count)
