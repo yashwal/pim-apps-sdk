@@ -383,7 +383,7 @@ class ProductProcessor(object):
         all_products, failed_products = self.fetch_all_pim_products(include_variants=include_variants, exclude_pim_properties=exclude_pim_properties)
         if all_products and isinstance(all_products,list):
             sorted_product = sorted(all_products, key=lambda d: d.get('pimUniqueId',''))
-        return sorted_product
+        return sorted_product, failed_products
 
     # 1. Pulls products and variants from PIM
 
