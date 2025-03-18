@@ -527,7 +527,7 @@ class ProductProcessor(object):
             # If include_variants is TRUE, then PARENT, VARIANT and SOLO will be sent and PARENT wont have VARIANT in it. VARIANTS will be followed by its PARENT
             if include_variants:
                 # Ensure required columns exist before filtering
-                required_columns = {'pimProductType', 'pimUniqueId', 'pimParentId'}
+                required_columns = {'pimProductType', 'pimUniqueId'}
                 missing_columns = required_columns - set(df.columns)
 
                 if missing_columns:
