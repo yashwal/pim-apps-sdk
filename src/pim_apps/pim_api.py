@@ -467,6 +467,7 @@ class ProductProcessor(object):
                     df = self.exclude_pim_properties(df)
                     
                 df = df.where(pd.notnull(df), None)
+                df.fillna('', inplace=True)
                 final_list = df.to_dict('records')
                 del df
                 return final_list
