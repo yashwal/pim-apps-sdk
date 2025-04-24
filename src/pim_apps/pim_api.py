@@ -228,17 +228,22 @@ class PIMChannelAPI(object):
         print(response.text)
 
     def get_export_details(self):
-
         url = f"{get_pim_app_domain()}v1/appTriggerInfo?referenceId={self.reference_id}"
-
-        payload = {}
         headers = {
             'Authorization': f'{self.api_key}'
         }
-
-        response = requests.request("GET", url, headers=headers, data=payload)
-
-        return json.loads(response.text)
+    
+        max_retries = 3
+        for _ in range(max_retries):
+            try:
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    return response.json()
+            except (json.JSONDecodeError, requests.RequestException):
+                pass
+            time.sleep(1)  
+    
+        return {}
 
     def update_export_status(self, data):
 
